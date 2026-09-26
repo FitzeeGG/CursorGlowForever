@@ -64,3 +64,6 @@ Please leave a comment with a screenshot of the cursor and the output of `/cg de
 ## Credits
 
 Inspired by [CursorMod](https://www.curseforge.com/wow/addons/cursormod) by sfmict, whose midnight glow this addon's glow is modelled on. Cursor Glow Forever is open source under the GNU GPL v3.
+
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/fitzee)
