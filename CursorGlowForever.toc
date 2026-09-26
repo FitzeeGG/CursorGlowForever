@@ -1,0 +1,11 @@
+## Interface: 16001
+## Title: Cursor Glow Forever
+## Notes: A glow around your cursor in your class colour, outlines on hover cursors, and the glove kept on screen while you turn the camera.
+## Version: 1.0.0
+## IconTexture: Interface\Cursor\Point
+## Category-enUS: User Interface
+## X-License: GPL-3.0
+## SavedVariables: CursorGlowForeverDB
+
+CursorGlowForever.lua
+Options.lua
