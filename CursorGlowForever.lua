@@ -35,7 +35,7 @@ local UNABLE_CELLS = {
 }
 local HOVER_SHEETS = {
 	Attack = "UIAttackCursor2x",
-	LootAll = "UIPickupCursor2x", -- the loot cursor is the single bag
+	LootAll = "UILootAllCursor2x",
 	Skin = "UICursorSkin2x",
 	Mine = "UICursorMine2x",
 	GatherHerbs = "UICursorGather2x",
@@ -47,12 +47,6 @@ local HOVER_SHEETS = {
 	Trainer = "UITrainerCursor2x",
 	StableMaster = "UIStableMasterCursor2x",
 	Repair = "UIRepairCursor2x", -- repair mode, set by the UI
-}
--- Cursors whose out of range version is drawn from another sheet, with a
--- different shape: the loot cursor is a single bag in range but the greyed
--- pair of bags from the loot-all sheet out of range.
-local OUT_OF_RANGE_SHEETS = {
-	LootAll = "UILootAllCursor2x",
 }
 -- The game sends CURSOR_CHANGED in the same frame as the
 -- WORLD_CURSOR_TOOLTIP_UPDATE for the target that caused it (GetTime is the
@@ -131,15 +125,14 @@ ns.cursor = cursor
 
 
 -- mode: "base", "turning" (drawn glove, stronger glow) or a HOVER_SHEETS key
--- Cuts the hover outline from the art of the current hover cursor: each mask is
--- the whole sheet, placed so the cursor's cell lines up with its texture.
+-- Cuts the hover outline from the art of the current hover cursor, its greyed
+-- version while out of range: each mask is the whole sheet, placed so the
+-- cursor's cell lines up with its texture.
 function ns.refreshHoverArt(force)
 	local mode = cursor.mode
 	if not HOVER_SHEETS[mode] or not cursor.sizeIndex then return end
-	local sheet, cells = HOVER_SHEETS[mode], SHEET_CELLS
-	if ns.hoverInRange == false and OUT_OF_RANGE_SHEETS[mode] then
-		sheet, cells = OUT_OF_RANGE_SHEETS[mode], UNABLE_CELLS
-	end
+	local sheet = HOVER_SHEETS[mode]
+	local cells = ns.hoverInRange == false and UNABLE_CELLS or SHEET_CELLS
 	local left, top, cellSize = unpack(cells[cursor.sizeIndex])
 	local art = sheet..left..":"..top..":"..cursor.size
 	if art == cursor.hoverArt and not force then return end
