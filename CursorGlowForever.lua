@@ -46,6 +46,7 @@ local HOVER_SHEETS = {
 -- Without that event the target is noticed from the tooltip a little later,
 -- so a wider window is used, minus changes that belong to leaving the last one.
 local SAME_FRAME = .001
+local UI_HANDOVER = .1
 local CHANGE_WINDOW = .25
 local LEAVE_GRACE = .05
 -- hover outline: rings of cursor silhouettes plus a soft circle, positions in
@@ -388,6 +389,19 @@ local function isWorldTooltipShown()
 end
 
 
+-- Nameplates usually take no mouse focus, but hovering one sets the mouseover
+-- unit while the game keeps the base cursor (the sword only shows over the
+-- unit itself). Nameplates can be forbidden, hence the pcall.
+local function isOverNameplate()
+	if not (C_NamePlate and C_NamePlate.GetNamePlateForUnit) then return false end
+	local ok, over = pcall(function()
+		local plate = C_NamePlate.GetNamePlateForUnit("mouseover")
+		return plate and plate:IsMouseOver() and true or false
+	end)
+	return ok and over or false
+end
+
+
 -- Over UI frames (nameplates, unit frames, bars) the game keeps the base
 -- cursor unless the UI sets one, even though a nameplate sets the mouseover unit.
 local function isOverWorld()
@@ -397,7 +411,8 @@ local function isOverWorld()
 	elseif GetMouseFocus then
 		focus = GetMouseFocus()
 	end
-	return focus == nil or focus == WorldFrame
+	if focus ~= nil and focus ~= WorldFrame then return false end
+	return not isOverNameplate()
 end
 
 
@@ -452,7 +467,11 @@ end
 
 local function cursorChangedNear(time)
 	for _, changeTime in ipairs(state.changeTimes) do
-		if state.worldEvent then
+		-- coming back from a UI frame (a nameplate onto its unit) sends no target
+		-- signal, so allow the cursor change a frame either side of the handover
+		if time == state.uiLeaveTime then
+			if math.abs(changeTime - time) <= UI_HANDOVER then return true end
+		elseif state.worldEvent then
 			if math.abs(changeTime - time) < SAME_FRAME then return true end
 		elseif changeTime > state.leaveTime + LEAVE_GRACE and math.abs(changeTime - time) <= CHANGE_WINDOW then
 			return true
@@ -547,6 +566,7 @@ driver:SetScript("OnUpdate", function()
 			show = false
 		end
 	elseif db.hideOnHover and not isOverWorld() then
+		if not state.overUI then state.uiEnterTime = GetTime() end
 		state.cursorChanged, state.hoverCursor, state.overUI = false, nil, true
 	elseif db.hideOnHover then
 		if state.overUI then
@@ -554,6 +574,7 @@ driver:SetScript("OnUpdate", function()
 			-- mouse afresh; a cursor change in this frame belongs to it
 			state.overUI = false
 			state.cursorChanged, state.changedBefore, state.targetTime = false, false, GetTime()
+			state.uiLeaveTime = state.targetTime
 			state.hoverCheckTime = 0
 		end
 		if state.wasHidden then
@@ -600,10 +621,15 @@ driver:SetScript("OnUpdate", function()
 
 	-- a cursor change on the same target (no reach or leave in its frame) is the
 	-- game swapping between the normal and "unable" versions: range changed
+	-- decided a little later, so a nameplate handover noticed a frame after
+	-- its cursor change is not taken for a range change
 	local rangeChangeTime = state.rangeChangeTime
-	if rangeChangeTime then
+	if rangeChangeTime and GetTime() - rangeChangeTime > UI_HANDOVER then
 		state.rangeChangeTime = nil
-		if state.wasOnTarget and not hidden and ns.hoverInRange ~= nil
+		-- (not the glove/sword change between a nameplate and its unit)
+		if state.wasOnTarget and not hidden and ns.hoverInRange ~= nil and not state.overUI
+			and math.abs(rangeChangeTime - (state.uiEnterTime or -1)) > UI_HANDOVER
+			and math.abs(rangeChangeTime - (state.uiLeaveTime or -1)) > UI_HANDOVER
 			and math.abs(rangeChangeTime - state.targetTime) >= SAME_FRAME
 			and math.abs(rangeChangeTime - state.leaveEventTime) >= SAME_FRAME then
 			ns.hoverInRange = not ns.hoverInRange
