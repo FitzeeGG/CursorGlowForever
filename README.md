@@ -20,7 +20,7 @@ When the cursor changes as you hover something, the outline follows it:
 - **Loot** bags, **ore**, **herbs** and **skinning**
 - **Enemies** (the sword)
 - **Mailboxes** and the **guild bank**
-- **Vendors, bankers, repairers, innkeepers, flight masters, stable masters** and **trainers**
+- **Vendors, bankers, repairers, innkeepers, flight masters, stable masters** and **trainers** (optional, off by default)
 - **Selling from your bags** at a vendor, and **repair mode**
 
 Each outline is cut from the game's own cursor art, so it always matches what you see. If it can't tell which cursor is showing, it simply shows no outline rather than a wrong one.
@@ -41,7 +41,7 @@ Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > 
 | Appearance | Behaviour |
 |---|---|
 | Class colour or custom colour | Hide the glow on hover targets |
-| Glow opacity | Outline hover cursors |
+| Glow opacity | Outline hover cursors, and vendors and services |
 | Outline opacity | Dim outlines out of range, and how faint |
 | Cursor size (follows the game setting) | Draw the glove while turning the camera |
 | Movement prediction | Glove colour and tint |

@@ -205,9 +205,13 @@ local function build()
 		"Outline the hover cursor (loot bag, pickaxe, sword...) when it can be told which one is showing. Unrecognised ones get no outline.")
 	outlineHover:SetPoint("TOPLEFT", hover, "BOTTOMLEFT", 0, -4)
 
+	local outlineServices = createCheckbox("outlineServices", "Outline vendors and services",
+		"Also outline the cursors of vendors, repairers, bankers, innkeepers, flight masters, stable masters and trainers. An NPC with a quest for you shows the quest cursor instead, which can't always be told in advance.")
+	outlineServices:SetPoint("TOPLEFT", outlineHover, "BOTTOMLEFT", 0, -4)
+
 	local dimRange = createCheckbox("dimOutOfRange", "Dim outlines out of range",
 		"Weaken the hover outline on NPCs and corpses while they are too far away to interact with, and bring it back to full strength in range.")
-	dimRange:SetPoint("TOPLEFT", outlineHover, "BOTTOMLEFT", 0, -4)
+	dimRange:SetPoint("TOPLEFT", outlineServices, "BOTTOMLEFT", 0, -4)
 
 	local rangeStrength = createSlider("outOfRangeStrength", "Out of range strength", .1, 1, .05, "%.2f", nil,
 		"How strong the hover outline is while out of interaction range, compared with in range.")

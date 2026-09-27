@@ -74,6 +74,7 @@ ns.defaults = {
 	cursorSize = -1, -- -1 = game setting, otherwise an index of CURSOR_SIZES
 	hideOnHover = true,
 	outlineHover = true,
+	outlineServices = false, -- vendors, bankers... (quest givers can't always be told apart)
 	dimOutOfRange = true,
 	outOfRangeStrength = .4,
 	gloveWhileTurning = true,
@@ -283,6 +284,9 @@ local NPC_TITLES = {
 -- world objects recognised by name (tooltip first line)
 local OBJECT_NAMES = {
 	{"Mailbox", "Mail"},
+}
+-- service objects, outlined with the NPC services
+local SERVICE_OBJECT_NAMES = {
 	{"Guild Vault", "Buy"},
 	{"Guild Bank", "Buy"},
 }
@@ -447,7 +451,8 @@ local function getHoverCursor()
 			return tooltipShown and findGathering(2) or nil
 		end
 		if UnitCanAttack("player", "mouseover") then return "Attack" end
-		if tooltipShown and not UnitPlayerControlled("mouseover") and not isKnownQuestGiver("mouseover") then
+		if ns.db.outlineServices and tooltipShown and not UnitPlayerControlled("mouseover")
+			and not isKnownQuestGiver("mouseover") then
 			return findText(2, 2, NPC_TITLES)
 		end
 		return
@@ -455,7 +460,8 @@ local function getHoverCursor()
 	if not tooltipShown then return end
 	local name = getLineText(1)
 	if name == MINIMAP_TRACKING_MAILBOX then return "Mail" end
-	return findText(1, 1, OBJECT_NAMES) or findGathering(1)
+	return findText(1, 1, OBJECT_NAMES) or ns.db.outlineServices and findText(1, 1, SERVICE_OBJECT_NAMES)
+		or findGathering(1)
 end
 
 
