@@ -431,6 +431,7 @@ local function reachTarget(signal)
 	local now = GetTime()
 	if not state.worldEvent and not state.leftSinceReach and now - state.targetTime <= CHANGE_WINDOW then return end
 	state.leftSinceReach = false
+	state.lookSettled = false
 	-- Moving straight from one target to the next, the game sends the leave
 	-- and the reach in the same frame: the look carries over from the target
 	-- just left (two chairs keep the cog, no cursor change comes).
@@ -444,7 +445,7 @@ local function reachTarget(signal)
 	-- Interaction range: the game shows the "unable" version of the cursor out
 	-- of range. For units the starting state comes from CheckInteractDistance;
 	-- after that every cursor change on the same target is the game swapping
-	-- between the two versions (see state.rangeChangeTime). Objects give no
+	-- between the two versions (see state.pendingChange). Objects give no
 	-- starting state, so they are never dimmed.
 	ns.hoverInRange = nil
 	if UnitExists("mouseover") and CheckInteractDistance then
@@ -454,6 +455,15 @@ local function reachTarget(signal)
 	ns.updateOpacity()
 	state.reportedUnknown = false
 	debug("reached target via", signal, "- hover look before:", state.changedBefore)
+	if ns.debug and UnitExists("mouseover") then
+		local ok, result = pcall(function()
+			if not (C_NamePlate and C_NamePlate.GetNamePlateForUnit) then return "no C_NamePlate" end
+			local plate = C_NamePlate.GetNamePlateForUnit("mouseover")
+			if not plate then return "no nameplate" end
+			return (plate:IsShown() and "shown" or "hidden")..", mouse "..(plate:IsMouseOver() and "over" or "not over")
+		end)
+		debug("nameplate:", ok and result or ("blocked: "..tostring(result)))
+	end
 end
 
 
@@ -472,7 +482,11 @@ local function cursorChangedNear(time)
 		if time == state.uiLeaveTime then
 			if math.abs(changeTime - time) <= UI_HANDOVER then return true end
 		elseif state.worldEvent then
-			if math.abs(changeTime - time) < SAME_FRAME then return true end
+			-- the target's own change comes in the same frame; one shortly after
+			-- also belongs to it (crossing from a unit's nameplate onto the unit
+			-- right away), while one before it belongs to what was left
+			local after = changeTime - time
+			if after > -SAME_FRAME and after <= UI_HANDOVER then return true end
 		elseif changeTime > state.leaveTime + LEAVE_GRACE and math.abs(changeTime - time) <= CHANGE_WINDOW then
 			return true
 		end
@@ -511,7 +525,8 @@ local function updateCursorChanged()
 	end
 	state.wasOnTarget = onTarget
 
-	if onTarget and GetTime() - state.targetTime <= CHANGE_WINDOW then
+	-- (a look change on the same target has already settled it)
+	if onTarget and not state.lookSettled and GetTime() - state.targetTime <= CHANGE_WINDOW then
 		local cursorChanged = cursorChangedNear(state.targetTime)
 		local changed = state.changedBefore ~= cursorChanged
 		-- Straight from one hover target to another with a cursor change is
@@ -575,7 +590,7 @@ driver:SetScript("OnUpdate", function()
 			state.overUI = false
 			state.cursorChanged, state.changedBefore, state.targetTime = false, false, GetTime()
 			state.uiLeaveTime = state.targetTime
-			state.hoverCheckTime = 0
+			state.hoverCheckTime, state.lookSettled = 0, false
 		end
 		if state.wasHidden then
 			-- The cursor reappears after turning the camera. Still on the same
@@ -584,7 +599,7 @@ driver:SetScript("OnUpdate", function()
 			local sameTarget = state.targetTime < state.hiddenTime and isOnTarget()
 			local changed = sameTarget and state.changedWhenHidden
 			state.cursorChanged, state.changedBefore, state.targetTime = changed, changed, GetTime()
-			state.hoverCheckTime = 0
+			state.hoverCheckTime, state.lookSettled = 0, false
 		end
 		updateCursorChanged()
 
@@ -621,20 +636,36 @@ driver:SetScript("OnUpdate", function()
 
 	-- a cursor change on the same target (no reach or leave in its frame) is the
 	-- game swapping between the normal and "unable" versions: range changed
-	-- decided a little later, so a nameplate handover noticed a frame after
-	-- its cursor change is not taken for a range change
-	local rangeChangeTime = state.rangeChangeTime
-	if rangeChangeTime and GetTime() - rangeChangeTime > UI_HANDOVER then
-		state.rangeChangeTime = nil
-		-- (not the glove/sword change between a nameplate and its unit)
-		if state.wasOnTarget and not hidden and ns.hoverInRange ~= nil and not state.overUI
-			and math.abs(rangeChangeTime - (state.uiEnterTime or -1)) > UI_HANDOVER
-			and math.abs(rangeChangeTime - (state.uiLeaveTime or -1)) > UI_HANDOVER
-			and math.abs(rangeChangeTime - state.targetTime) >= SAME_FRAME
-			and math.abs(rangeChangeTime - state.leaveEventTime) >= SAME_FRAME then
-			ns.hoverInRange = not ns.hoverInRange
-			debug("interaction range", ns.hoverInRange and "in" or "out")
-			ns.updateOpacity()
+	-- A cursor change on the same target (no reach or leave in its frame) is
+	-- either the game swapping between the normal and "unable" versions (range)
+	-- or the look changing on the same unit: its nameplate keeps the base
+	-- cursor, the unit itself shows the sword. The sword has no range version
+	-- and crossing a nameplate needs the mouse to move, so for an enemy or with
+	-- the mouse moving it is a look change. Range changes are decided a little
+	-- later, so a nameplate handover noticed a frame late is not taken for one.
+	local change = state.pendingChange
+	if change then
+		local now = GetTime()
+		local sameTarget = state.wasOnTarget and not hidden and not state.overUI
+			and math.abs(change.time - (state.uiEnterTime or -1)) > UI_HANDOVER
+			and math.abs(change.time - (state.uiLeaveTime or -1)) > UI_HANDOVER
+			-- a change around reaching the target belongs to the arrival (its
+			-- signals can be spread over a couple of frames)
+			and math.abs(change.time - state.targetTime) > UI_HANDOVER
+			and math.abs(change.time - state.leaveEventTime) >= SAME_FRAME
+		if not sameTarget then
+			if now - change.time > UI_HANDOVER then state.pendingChange = nil end
+		elseif change.moving or state.hoverCursor == "Attack" then
+			state.pendingChange = nil
+			state.cursorChanged, state.lookSettled, state.hoverCheckTime = not state.cursorChanged, true, 0
+			debug("hover look", state.cursorChanged and "on" or "off", "(same target)")
+		elseif now - change.time > UI_HANDOVER then
+			state.pendingChange = nil
+			if ns.hoverInRange ~= nil then
+				ns.hoverInRange = not ns.hoverInRange
+				debug("interaction range", ns.hoverInRange and "in" or "out")
+				ns.updateOpacity()
+			end
 		end
 	end
 
@@ -711,7 +742,7 @@ function events:CURSOR_CHANGED(isDefault, newCursorType)
 	if #state.changeTimes > 8 then table.remove(state.changeTimes, 1) end
 	debug("CURSOR_CHANGED")
 	-- decided at the end of the frame, once any target signals of this frame are in
-	state.rangeChangeTime = now
+	state.pendingChange = {time = now, moving = now - state.lastMoveTime < .1}
 	-- fallback: an object tooltip lingers after leaving the object, so a
 	-- cursor change after reaching it, with the mouse moving (not a range
 	-- change), means the mouse left it
