@@ -25,6 +25,14 @@ local SHEET_CELLS = {
 	{1, 131, 96},
 	{1, 1, 128},
 }
+-- the greyed "unable" (out of range) version of each cursor, next to it
+local UNABLE_CELLS = {
+	[0] = {261, 101, 32},
+	{443, 1, 48},
+	{327, 1, 64},
+	{131, 131, 96},
+	{131, 1, 128},
+}
 local HOVER_SHEETS = {
 	Attack = "UIAttackCursor2x",
 	LootAll = "UIPickupCursor2x", -- the loot cursor is the single bag
@@ -39,6 +47,12 @@ local HOVER_SHEETS = {
 	Trainer = "UITrainerCursor2x",
 	StableMaster = "UIStableMasterCursor2x",
 	Repair = "UIRepairCursor2x", -- repair mode, set by the UI
+}
+-- Cursors whose out of range version is drawn from another sheet, with a
+-- different shape: the loot cursor is a single bag in range but the greyed
+-- pair of bags from the loot-all sheet out of range.
+local OUT_OF_RANGE_SHEETS = {
+	LootAll = "UILootAllCursor2x",
 }
 -- The game sends CURSOR_CHANGED in the same frame as the
 -- WORLD_CURSOR_TOOLTIP_UPDATE for the target that caused it (GetTime is the
@@ -117,6 +131,29 @@ ns.cursor = cursor
 
 
 -- mode: "base", "turning" (drawn glove, stronger glow) or a HOVER_SHEETS key
+-- Cuts the hover outline from the art of the current hover cursor: each mask is
+-- the whole sheet, placed so the cursor's cell lines up with its texture.
+function ns.refreshHoverArt(force)
+	local mode = cursor.mode
+	if not HOVER_SHEETS[mode] or not cursor.sizeIndex then return end
+	local sheet, cells = HOVER_SHEETS[mode], SHEET_CELLS
+	if ns.hoverInRange == false and OUT_OF_RANGE_SHEETS[mode] then
+		sheet, cells = OUT_OF_RANGE_SHEETS[mode], UNABLE_CELLS
+	end
+	local left, top, cellSize = unpack(cells[cursor.sizeIndex])
+	local art = sheet..left..":"..top..":"..cursor.size
+	if art == cursor.hoverArt and not force then return end
+	cursor.hoverArt = art
+	local texel = cursor.size / cellSize
+	for _, texture in ipairs(cursor.hover.copies) do
+		texture.mask:SetTexture(CURSORS..sheet, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+		texture.mask:SetSize(SHEET_WIDTH * texel, SHEET_HEIGHT * texel)
+		texture.mask:ClearAllPoints()
+		texture.mask:SetPoint("TOPLEFT", texture, "TOPLEFT", -left * texel, top * texel)
+	end
+end
+
+
 local function setMode(mode)
 	if cursor.mode == mode then return end
 	cursor.mode = mode
@@ -125,11 +162,7 @@ local function setMode(mode)
 	cursor.outline:SetShown(base)
 	cursor.glove:SetShown(mode == "turning")
 	cursor.hover:SetShown(not base)
-	if not base then
-		for _, texture in ipairs(cursor.hover.copies) do
-			texture.mask:SetTexture(CURSORS..HOVER_SHEETS[mode], "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-		end
-	end
+	ns.refreshHoverArt()
 	ns.updateOpacity()
 end
 
@@ -186,10 +219,9 @@ function ns.updateLayout()
 	local sizeIndex = getCursorSizeIndex()
 	local size = CURSOR_SIZES[sizeIndex] * getPixelScale()
 	local unit = size / 32
-	local left, top, cellSize = unpack(SHEET_CELLS[sizeIndex])
-	local texel = size / cellSize
 	local r, g, b = ns.getColor()
 	cursor:SetSize(size, size)
+	cursor.sizeIndex, cursor.size = sizeIndex, size
 
 	for _, texture in ipairs({cursor.glow, cursor.outline}) do
 		texture:SetSize(size * 2, size * 2)
@@ -207,10 +239,6 @@ function ns.updateLayout()
 		texture:ClearAllPoints()
 		texture:SetPoint("TOPLEFT", cursor, "TOPLEFT",
 			math.cos(texture.angle) * texture.ring.radius * unit, -math.sin(texture.angle) * texture.ring.radius * unit)
-		-- the whole sheet, placed so the cursor's cell lines up with the texture
-		texture.mask:SetSize(SHEET_WIDTH * texel, SHEET_HEIGHT * texel)
-		texture.mask:ClearAllPoints()
-		texture.mask:SetPoint("TOPLEFT", texture, "TOPLEFT", -left * texel, top * texel)
 	end
 
 	-- a tinge of the glow colour, or of the glove's own colour
@@ -218,6 +246,7 @@ function ns.updateLayout()
 	local gr, gg, gb = r, g, b
 	if not db.gloveUseGlowColor then gr, gg, gb = unpack(db.gloveColor) end
 	cursor.glove:SetVertexColor(1 - (1 - gr) * tint, 1 - (1 - gg) * tint, 1 - (1 - gb) * tint)
+	ns.refreshHoverArt(true)
 	ns.updateOpacity()
 end
 
@@ -480,6 +509,7 @@ local function reachTarget(signal)
 		local ok, inRange = pcall(function() return CheckInteractDistance("mouseover", 3) and true or false end)
 		if ok then ns.hoverInRange = inRange end
 	end
+	ns.refreshHoverArt()
 	ns.updateOpacity()
 	state.reportedUnknown = false
 	debug("reached target via", signal, "- hover look before:", state.changedBefore)
@@ -692,6 +722,7 @@ driver:SetScript("OnUpdate", function()
 			if ns.hoverInRange ~= nil then
 				ns.hoverInRange = not ns.hoverInRange
 				debug("interaction range", ns.hoverInRange and "in" or "out")
+				ns.refreshHoverArt()
 				ns.updateOpacity()
 			end
 		end
