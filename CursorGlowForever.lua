@@ -40,10 +40,6 @@ local HOVER_SHEETS = {
 	StableMaster = "UIStableMasterCursor2x",
 	Repair = "UIRepairCursor2x", -- repair mode, set by the UI
 }
--- Gathering (skinning, mining, herbs) only changes the cursor with the right
--- profession, so recognising the target is not proof of a hover look: for
--- those the cursor events decide, and recognition only picks the outline.
-local PROFESSION_LOOKS = {Skin = true, Mine = true, GatherHerbs = true}
 -- The game sends CURSOR_CHANGED in the same frame as the
 -- WORLD_CURSOR_TOOLTIP_UPDATE for the target that caused it (GetTime is the
 -- same within a frame), so only a change in that frame belongs to the target.
@@ -312,10 +308,11 @@ local function findText(first, last, matches)
 end
 
 
--- Apart from the PROFESSION_LOOKS, every answer is a cursor the game always
--- shows for that target (the "unable" versions have the same shape), so it
--- also proves the cursor has a hover look. Tooltip text is only read while the
--- tooltip is up.
+-- The answer only picks the outline shape: whether the cursor has a hover look
+-- at all is left to the cursor events, since recognising a target proves
+-- nothing (no gathering cursor without the profession, and in the log an
+-- attackable enemy did not change the cursor). The "unable" versions have the
+-- same shape. Tooltip text is only read while the tooltip is up.
 local function getHoverCursor()
 	local tooltipShown = GameTooltip:IsShown()
 	if UnitExists("mouseover") then
@@ -496,7 +493,13 @@ local function updateCursorChanged()
 	state.wasOnTarget = onTarget
 
 	if onTarget and GetTime() - state.targetTime <= CHANGE_WINDOW then
-		local changed = state.changedBefore ~= cursorChangedNear(state.targetTime)
+		local cursorChanged = cursorChangedNear(state.targetTime)
+		local changed = state.changedBefore ~= cursorChanged
+		-- Straight from one hover target to another with a cursor change is
+		-- either back to the base cursor or on to another hover cursor (sword to
+		-- vendor bag); a recognised target settles it. The tooltip can arrive a
+		-- few frames late, hence the whole window.
+		if state.changedBefore and cursorChanged and state.hoverCursor then changed = true end
 		if changed ~= state.cursorChanged then
 			state.cursorChanged = changed
 			debug("hover look", changed and "on" or "off")
@@ -564,10 +567,9 @@ driver:SetScript("OnUpdate", function()
 		end
 		updateCursorChanged()
 
-		-- An identified target always has its hover cursor, whatever the cursor
-		-- events said (none arrive when the cursor reappears unchanged after
-		-- turning the camera). The tooltip can lag behind the target, so check
-		-- again whenever it changes and every tenth of a second.
+		-- Identify the target to pick the outline shape. The tooltip can lag
+		-- behind the target, so check again whenever it changes and every tenth
+		-- of a second.
 		local now = GetTime()
 		if not state.wasOnTarget then
 			state.hoverCursor = nil
@@ -583,7 +585,6 @@ driver:SetScript("OnUpdate", function()
 			end
 			state.hoverCursor = hoverCursor
 		end
-		if state.hoverCursor and not PROFESSION_LOOKS[state.hoverCursor] then state.cursorChanged = true end
 
 		if state.cursorChanged then
 			if state.hoverCursor and db.outlineHover then
