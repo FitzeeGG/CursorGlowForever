@@ -320,13 +320,13 @@ end
 
 
 -- GATHERING PROFESSIONS
--- Without the profession there is no gathering cursor to outline. Known from the
--- profession list (GetProfessions), the classic skill list (GetSkillLineInfo)
--- or the profession's spells (any rank), cached until the skills change.
+-- Ore and herbs show their (greyed) cursor without the profession too, but a
+-- skinnable corpse keeps the base cursor without Skinning, so the skinning
+-- outline needs the profession. Known from the profession list
+-- (GetProfessions), the classic skill list (GetSkillLineInfo) or the
+-- profession's spells (any rank), cached until the skills change.
 local GATHERING = {
 	Skin = {skillLine = 393, spells = {8613, 8617, 8618, 10768, 32678, 50305, 74522, 102216, 158756}},
-	Mine = {skillLine = 186, spells = {2575, 2576, 3564, 10248, 29354, 50310, 74517, 102161, 158754}},
-	GatherHerbs = {skillLine = 182, spells = {2366, 2368, 3570, 11993, 28695, 50300, 74519, 110413, 158745}},
 }
 local knownGathering
 
@@ -433,10 +433,10 @@ local function isKnownQuestGiver(unit)
 end
 
 
--- gathering cursors only with the profession
+-- the skinning cursor only with the profession
 local function findGathering(first)
 	local look = findText(first, nil, getGatherTexts())
-	if look and not ns.hasGatheringProfession(look) then return nil end
+	if look and GATHERING[look] and not ns.hasGatheringProfession(look) then return nil end
 	return look
 end
 
