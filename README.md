@@ -56,7 +56,7 @@ Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > 
 
 - The game doesn't tell addons which cursor it's showing, so the addon works it out from what's under your mouse. NPC titles (Vendor, Banker, Innkeeper...) are recognised on **English** clients.
 - Objects such as mailboxes and ore aren't dimmed out of range, because the game gives no way to tell whether you start in range.
-- An NPC offering a quest shows the quest cursor instead of its service one, and the game doesn't tell addons which NPCs have quests. Cursor Glow Forever learns them when you talk to them, so the first time you hover a quest-giving vendor it may still show the vendor outline.
+- An NPC offering a quest shows the quest cursor instead of its service one, and the game doesn't tell addons which NPCs have quests. Cursor Glow Forever ships a list of the vendors, trainers, innkeepers and other service NPCs that give quests, and learns from talking to them whether they still have quests for you. NPCs new to Forever aren't in the list yet, so the first time you hover one of those that gives quests it may still show its service outline.
 
 ## Found a bug?
 
@@ -64,7 +64,7 @@ Please leave a comment with a screenshot of the cursor and the output of `/cg de
 
 ## Credits
 
-Inspired by [CursorMod](https://www.curseforge.com/wow/addons/cursormod) by sfmict, whose midnight glow this addon's glow is modelled on. Cursor Glow Forever is open source under the GNU GPL v3.
+Inspired by [CursorMod](https://www.curseforge.com/wow/addons/cursormod) by sfmict, whose midnight glow this addon's glow is modelled on. The list of quest-giving NPCs comes from the Forever data of [QuestieDB](https://github.com/Questie/QuestieDB), with thanks to the Questie team. Cursor Glow Forever is open source under the GNU GPL v3.
 
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/fitzee)

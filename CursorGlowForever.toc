@@ -8,5 +8,6 @@
 ## SavedVariables: CursorGlowForeverDB
 ## SavedVariablesPerCharacter: CursorGlowForeverCharDB
 
+QuestGivers.lua
 CursorGlowForever.lua
 Options.lua

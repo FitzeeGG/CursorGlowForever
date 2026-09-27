@@ -329,11 +329,14 @@ end
 
 -- A quest giver shows the quest cursor over its service one (the vendor bag,
 -- the repair anvil...), and the game does not tell addons which NPCs have
--- quests. They are learned from the quest windows when talking to them, per
--- character, and get no outline until they are seen without quests again.
+-- quests. What talking to an NPC showed (per character) comes first; else the
+-- built-in list of service NPCs with quests (QuestGivers.lua) counts.
 local function isKnownQuestGiver(unit)
 	local npcID = getNPCID(unit)
-	return npcID and ns.charDB and ns.charDB.questGivers[npcID] or false
+	if not npcID then return false end
+	local learned = ns.charDB and ns.charDB.questGivers[npcID]
+	if learned ~= nil then return learned end
+	return ns.QUEST_GIVER_NPCS and ns.QUEST_GIVER_NPCS[tonumber(npcID)] or false
 end
 
 
@@ -761,8 +764,9 @@ end
 local function setQuestGiver(hasQuests)
 	local npcID = getNPCID("npc")
 	if not npcID or not ns.charDB then return end
+	-- kept for both answers: "no quests" overrides the built-in list
 	local questGivers = ns.charDB.questGivers
-	hasQuests = hasQuests or nil
+	hasQuests = hasQuests and true or false
 	if questGivers[npcID] ~= hasQuests then
 		questGivers[npcID] = hasQuests
 		debug("NPC", npcID, hasQuests and "has quests" or "has no quests")
