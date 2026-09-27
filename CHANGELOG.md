@@ -1,12 +1,9 @@
 # Cursor Glow Forever
 
-## 1.0.2
-
-- Fixed: hovering an enemy's nameplate (or any other UI frame showing a unit) drew a sword outline around the normal cursor. Over UI frames the cursor is now treated as the normal one, unless the UI sets its own (selling, repair).
-
 ## 1.0.1
 
 - Fixed: hovering a skinnable corpse, ore or herb without the matching profession drew a skinning, mining or herb outline around the normal cursor. Gathering outlines now only show when the game really shows the gathering cursor.
+- Fixed: hovering an enemy's nameplate (or any other UI frame showing a unit) drew a sword outline around the normal cursor. Over UI frames the cursor is now treated as the normal one, unless the UI sets its own (selling, repair).
 
 ## 1.0.0
 
