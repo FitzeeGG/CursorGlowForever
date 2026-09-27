@@ -764,7 +764,9 @@ driver:SetScript("OnUpdate", function()
 	-- or the look changing on the same unit: its nameplate keeps the base
 	-- cursor, the unit itself shows the sword. The sword has no range version
 	-- and crossing a nameplate needs the mouse to move, so for an enemy or with
-	-- the mouse moving it is a look change. Range changes are decided a little
+	-- the mouse moving it is a look change; so is one with a modifier key
+	-- pressed or released (shift over a corpse shows the base cursor). Range
+	-- changes are decided a little
 	-- later, so a nameplate handover noticed a frame late is not taken for one.
 	local change = state.pendingChange
 	if change then
@@ -778,7 +780,7 @@ driver:SetScript("OnUpdate", function()
 			and math.abs(change.time - state.leaveEventTime) >= SAME_FRAME
 		if not sameTarget then
 			if now - change.time > UI_HANDOVER then state.pendingChange = nil end
-		elseif change.moving or state.hoverCursor == "Attack" then
+		elseif change.moving or change.modifier or state.hoverCursor == "Attack" then
 			state.pendingChange = nil
 			state.cursorChanged, state.lookSettled, state.hoverCheckTime = not state.cursorChanged, true, 0
 			debug("hover look", state.cursorChanged and "on" or "off", "(same target)")
@@ -851,9 +853,20 @@ function events:PLAYER_LOGIN()
 	state.worldEvent = pcall(self.RegisterEvent, self, "WORLD_CURSOR_TOOLTIP_UPDATE")
 	ns.worldEvent = state.worldEvent
 	for _, event in ipairs({"GOSSIP_SHOW", "QUEST_GREETING", "QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE",
-		"SKILL_LINES_CHANGED", "LEARNED_SPELL_IN_TAB", "SPELLS_CHANGED"}) do
+		"SKILL_LINES_CHANGED", "LEARNED_SPELL_IN_TAB", "SPELLS_CHANGED", "MODIFIER_STATE_CHANGED"}) do
 		pcall(self.RegisterEvent, self, event)
 	end
+end
+
+
+-- a modifier key can change the cursor on the same target (see state.pendingChange)
+function events:MODIFIER_STATE_CHANGED(key, down)
+	state.modifierTime = GetTime()
+	-- the cursor change may arrive just before the modifier event
+	if state.pendingChange and state.modifierTime - state.pendingChange.time < UI_HANDOVER then
+		state.pendingChange.modifier = true
+	end
+	debug("MODIFIER_STATE_CHANGED", key, down)
 end
 
 
@@ -927,7 +940,8 @@ function events:CURSOR_CHANGED(isDefault, newCursorType)
 	if #state.changeTimes > 8 then table.remove(state.changeTimes, 1) end
 	debug("CURSOR_CHANGED")
 	-- decided at the end of the frame, once any target signals of this frame are in
-	state.pendingChange = {time = now, moving = now - state.lastMoveTime < .1}
+	state.pendingChange = {time = now, moving = now - state.lastMoveTime < .1,
+		modifier = now - (state.modifierTime or -1) < UI_HANDOVER}
 	-- fallback: an object tooltip lingers after leaving the object, so a
 	-- cursor change after reaching it, with the mouse moving (not a range
 	-- change), means the mouse left it
