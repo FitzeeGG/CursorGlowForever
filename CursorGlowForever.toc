@@ -6,6 +6,7 @@
 ## Category-enUS: User Interface
 ## X-License: GPL-3.0
 ## SavedVariables: CursorGlowForeverDB
+## SavedVariablesPerCharacter: CursorGlowForeverCharDB
 
 CursorGlowForever.lua
 Options.lua

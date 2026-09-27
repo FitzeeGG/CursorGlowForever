@@ -314,6 +314,29 @@ end
 -- nothing (no gathering cursor without the profession, and in the log an
 -- attackable enemy did not change the cursor). The "unable" versions have the
 -- same shape. Tooltip text is only read while the tooltip is up.
+-- NPC ID from a unit's GUID (Creature-0-server-instance-zone-npcID-spawn);
+-- the GUID can be secret, hence the pcall
+local function getNPCID(unit)
+	local ok, npcID = pcall(function()
+		local guid = UnitGUID(unit)
+		if not guid then return end
+		local kind, _, _, _, _, id = strsplit("-", guid)
+		if kind == "Creature" or kind == "Vehicle" then return id end
+	end)
+	return ok and npcID or nil
+end
+
+
+-- A quest giver shows the quest cursor over its service one (the vendor bag,
+-- the repair anvil...), and the game does not tell addons which NPCs have
+-- quests. They are learned from the quest windows when talking to them, per
+-- character, and get no outline until they are seen without quests again.
+local function isKnownQuestGiver(unit)
+	local npcID = getNPCID(unit)
+	return npcID and ns.charDB and ns.charDB.questGivers[npcID] or false
+end
+
+
 local function getHoverCursor()
 	local tooltipShown = GameTooltip:IsShown()
 	if UnitExists("mouseover") then
@@ -325,7 +348,9 @@ local function getHoverCursor()
 			return tooltipShown and findText(2, nil, getGatherTexts()) or nil
 		end
 		if UnitCanAttack("player", "mouseover") then return "Attack" end
-		if tooltipShown and not UnitPlayerControlled("mouseover") then return findText(2, 2, NPC_TITLES) end
+		if tooltipShown and not UnitPlayerControlled("mouseover") and not isKnownQuestGiver("mouseover") then
+			return findText(2, 2, NPC_TITLES)
+		end
 		return
 	end
 	if not tooltipShown then return end
@@ -708,6 +733,9 @@ function events:ADDON_LOADED(name)
 		end
 	end
 	ns.db = CursorGlowForeverDB
+	CursorGlowForeverCharDB = CursorGlowForeverCharDB or {}
+	CursorGlowForeverCharDB.questGivers = CursorGlowForeverCharDB.questGivers or {}
+	ns.charDB = CursorGlowForeverCharDB
 	state.lastX, state.lastY = GetCursorPosition()
 	ns.setEnabled(ns.db.enabled)
 end
@@ -723,7 +751,57 @@ function events:PLAYER_LOGIN()
 	-- registering an event the client does not have raises an error
 	state.worldEvent = pcall(self.RegisterEvent, self, "WORLD_CURSOR_TOOLTIP_UPDATE")
 	ns.worldEvent = state.worldEvent
+	for _, event in ipairs({"GOSSIP_SHOW", "QUEST_GREETING", "QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE"}) do
+		pcall(self.RegisterEvent, self, event)
+	end
 end
+
+
+-- QUEST GIVERS (see isKnownQuestGiver)
+local function setQuestGiver(hasQuests)
+	local npcID = getNPCID("npc")
+	if not npcID or not ns.charDB then return end
+	local questGivers = ns.charDB.questGivers
+	hasQuests = hasQuests or nil
+	if questGivers[npcID] ~= hasQuests then
+		questGivers[npcID] = hasQuests
+		debug("NPC", npcID, hasQuests and "has quests" or "has no quests")
+	end
+end
+
+
+local function countList(getter)
+	if not getter then return 0 end
+	local ok, list = pcall(getter)
+	return ok and type(list) == "table" and #list or 0
+end
+
+
+local function countNumber(getter)
+	if not getter then return 0 end
+	local ok, count = pcall(getter)
+	return ok and tonumber(count) or 0
+end
+
+
+-- the gossip window lists the NPC's quests next to its other options
+function events:GOSSIP_SHOW()
+	local gossip = C_GossipInfo or {}
+	local quests = countList(gossip.GetAvailableQuests) + countList(gossip.GetActiveQuests)
+	if not gossip.GetAvailableQuests then
+		quests = countNumber(GetNumGossipAvailableQuests) + countNumber(GetNumGossipActiveQuests)
+	end
+	setQuestGiver(quests > 0)
+end
+
+
+-- quest-only NPCs open these instead
+function events:QUEST_GREETING()
+	setQuestGiver(countNumber(GetNumAvailableQuests) + countNumber(GetNumActiveQuests) > 0)
+end
+function events:QUEST_DETAIL() setQuestGiver(true) end
+events.QUEST_PROGRESS = events.QUEST_DETAIL
+events.QUEST_COMPLETE = events.QUEST_DETAIL
 
 
 function events:UI_SCALE_CHANGED() ns.updateLayout() end
