@@ -391,6 +391,19 @@ local function isWorldTooltipShown()
 end
 
 
+-- Over UI frames (nameplates, unit frames, bars) the game keeps the base
+-- cursor unless the UI sets one, even though a nameplate sets the mouseover unit.
+local function isOverWorld()
+	local focus
+	if GetMouseFoci then
+		focus = GetMouseFoci()[1]
+	elseif GetMouseFocus then
+		focus = GetMouseFocus()
+	end
+	return focus == nil or focus == WorldFrame
+end
+
+
 local function isOnTarget()
 	if UnitExists("mouseover") then return true end
 	if state.worldEvent then return state.worldTarget end
@@ -530,7 +543,16 @@ driver:SetScript("OnUpdate", function()
 		else
 			show = false
 		end
+	elseif db.hideOnHover and not isOverWorld() then
+		state.cursorChanged, state.hoverCursor, state.overUI = false, nil, true
 	elseif db.hideOnHover then
+		if state.overUI then
+			-- back onto the world from a UI frame: judge what is under the
+			-- mouse afresh; a cursor change in this frame belongs to it
+			state.overUI = false
+			state.cursorChanged, state.changedBefore, state.targetTime = false, false, GetTime()
+			state.hoverCheckTime = 0
+		end
 		if state.wasHidden then
 			-- The cursor reappears after turning the camera. Still on the same
 			-- target it has the look it had before; otherwise judge it afresh.
