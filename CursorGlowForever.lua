@@ -319,6 +319,70 @@ local function getGatherTexts()
 end
 
 
+-- GATHERING PROFESSIONS
+-- Without the profession there is no gathering cursor to outline. Known from the
+-- profession list (GetProfessions), the classic skill list (GetSkillLineInfo)
+-- or the profession's spells (any rank), cached until the skills change.
+local GATHERING = {
+	Skin = {skillLine = 393, spells = {8613, 8617, 8618, 10768, 32678, 50305, 74522, 102216, 158756}},
+	Mine = {skillLine = 186, spells = {2575, 2576, 3564, 10248, 29354, 50310, 74517, 102161, 158754}},
+	GatherHerbs = {skillLine = 182, spells = {2366, 2368, 3570, 11993, 28695, 50300, 74519, 110413, 158745}},
+}
+local knownGathering
+
+
+local function isSpellKnown(spellID)
+	if IsPlayerSpell and IsPlayerSpell(spellID) then return true end
+	return IsSpellKnown and IsSpellKnown(spellID) or false
+end
+
+
+-- nil when the client offers no way to read professions at all
+local function readGathering()
+	if not (GetProfessions or GetSkillLineInfo or IsPlayerSpell or IsSpellKnown) then return nil end
+	local known = {}
+	local names = {}
+	for look, profession in pairs(GATHERING) do
+		names[getSpellName(profession.spells[1], "")] = look
+		for _, spellID in ipairs(profession.spells) do
+			if isSpellKnown(spellID) then known[look] = true end
+		end
+	end
+	if GetProfessions and GetProfessionInfo then
+		for _, index in pairs({GetProfessions()}) do
+			local name, _, _, _, _, _, skillLine = GetProfessionInfo(index)
+			for look, profession in pairs(GATHERING) do
+				if skillLine == profession.skillLine then known[look] = true end
+			end
+			if names[name] then known[names[name]] = true end
+		end
+	end
+	if GetNumSkillLines and GetSkillLineInfo then
+		for i = 1, GetNumSkillLines() do
+			local name, isHeader = GetSkillLineInfo(i)
+			if not isHeader and names[name] then known[names[name]] = true end
+		end
+	end
+	return known
+end
+
+
+function ns.hasGatheringProfession(look)
+	if not knownGathering then
+		local ok, known = pcall(readGathering)
+		-- unreadable: assume the profession rather than hide a real cursor
+		if not ok or not known then return true end
+		knownGathering = known
+	end
+	return knownGathering[look] or false
+end
+
+
+function ns.resetGatheringProfessions()
+	knownGathering = nil
+end
+
+
 local function getLineText(i)
 	local line = _G["GameTooltipTextLeft"..i]
 	local text = line and line:GetText()
@@ -369,6 +433,14 @@ local function isKnownQuestGiver(unit)
 end
 
 
+-- gathering cursors only with the profession
+local function findGathering(first)
+	local look = findText(first, nil, getGatherTexts())
+	if look and not ns.hasGatheringProfession(look) then return nil end
+	return look
+end
+
+
 local function getHoverCursor()
 	local tooltipShown = GameTooltip:IsShown()
 	if UnitExists("mouseover") then
@@ -377,7 +449,7 @@ local function getHoverCursor()
 				local ok, hasLoot = pcall(CanLootUnit, UnitGUID("mouseover"))
 				if ok and hasLoot then return "LootAll" end
 			end
-			return tooltipShown and findText(2, nil, getGatherTexts()) or nil
+			return tooltipShown and findGathering(2) or nil
 		end
 		if UnitCanAttack("player", "mouseover") then return "Attack" end
 		if tooltipShown and not UnitPlayerControlled("mouseover") and not isKnownQuestGiver("mouseover") then
@@ -388,7 +460,7 @@ local function getHoverCursor()
 	if not tooltipShown then return end
 	local name = getLineText(1)
 	if name == MINIMAP_TRACKING_MAILBOX then return "Mail" end
-	return findText(1, 1, OBJECT_NAMES) or findText(1, nil, getGatherTexts())
+	return findText(1, 1, OBJECT_NAMES) or findGathering(1)
 end
 
 
@@ -785,10 +857,17 @@ function events:PLAYER_LOGIN()
 	-- registering an event the client does not have raises an error
 	state.worldEvent = pcall(self.RegisterEvent, self, "WORLD_CURSOR_TOOLTIP_UPDATE")
 	ns.worldEvent = state.worldEvent
-	for _, event in ipairs({"GOSSIP_SHOW", "QUEST_GREETING", "QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE"}) do
+	for _, event in ipairs({"GOSSIP_SHOW", "QUEST_GREETING", "QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE",
+		"SKILL_LINES_CHANGED", "LEARNED_SPELL_IN_TAB", "SPELLS_CHANGED"}) do
 		pcall(self.RegisterEvent, self, event)
 	end
 end
+
+
+-- professions learned or unlearned
+function events:SKILL_LINES_CHANGED() ns.resetGatheringProfessions() end
+events.LEARNED_SPELL_IN_TAB = events.SKILL_LINES_CHANGED
+events.SPELLS_CHANGED = events.SKILL_LINES_CHANGED
 
 
 -- QUEST GIVERS (see isKnownQuestGiver)
