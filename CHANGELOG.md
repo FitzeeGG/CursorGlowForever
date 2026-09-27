@@ -1,5 +1,9 @@
 # Cursor Glow Forever
 
+## 1.0.1
+
+- Fixed: hovering a skinnable corpse, ore or herb without the matching profession drew a skinning, mining or herb outline around the normal cursor. Gathering outlines now only show when the game really shows the gathering cursor.
+
 ## 1.0.0
 
 First release, for World of Warcraft: Forever.

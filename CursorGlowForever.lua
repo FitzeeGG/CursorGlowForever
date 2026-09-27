@@ -40,6 +40,10 @@ local HOVER_SHEETS = {
 	StableMaster = "UIStableMasterCursor2x",
 	Repair = "UIRepairCursor2x", -- repair mode, set by the UI
 }
+-- Gathering (skinning, mining, herbs) only changes the cursor with the right
+-- profession, so recognising the target is not proof of a hover look: for
+-- those the cursor events decide, and recognition only picks the outline.
+local PROFESSION_LOOKS = {Skin = true, Mine = true, GatherHerbs = true}
 -- The game sends CURSOR_CHANGED in the same frame as the
 -- WORLD_CURSOR_TOOLTIP_UPDATE for the target that caused it (GetTime is the
 -- same within a frame), so only a change in that frame belongs to the target.
@@ -308,9 +312,10 @@ local function findText(first, last, matches)
 end
 
 
--- Every answer is a cursor the game always shows for that target (the
--- "unable" versions have the same shape), so it also proves the cursor has a
--- hover look. Tooltip text is only read while the tooltip is up.
+-- Apart from the PROFESSION_LOOKS, every answer is a cursor the game always
+-- shows for that target (the "unable" versions have the same shape), so it
+-- also proves the cursor has a hover look. Tooltip text is only read while the
+-- tooltip is up.
 local function getHoverCursor()
 	local tooltipShown = GameTooltip:IsShown()
 	if UnitExists("mouseover") then
@@ -556,7 +561,7 @@ driver:SetScript("OnUpdate", function()
 			end
 			state.hoverCursor = hoverCursor
 		end
-		if state.hoverCursor then state.cursorChanged = true end
+		if state.hoverCursor and not PROFESSION_LOOKS[state.hoverCursor] then state.cursorChanged = true end
 
 		if state.cursorChanged then
 			if state.hoverCursor and db.outlineHover then
