@@ -6,7 +6,7 @@
 - Fixed: hovering an enemy's nameplate (or any other UI frame showing a unit) drew a sword outline around the normal cursor, and moving between a nameplate and its enemy left the glow a step behind. The nameplate is now recognised directly and treated like the UI: normal cursor there, the sword on the enemy itself.
 - Fixed: an NPC offering or taking in a quest shows the quest cursor over its service one, but got the vendor/repair/... outline. The game doesn't tell addons which NPCs have quests, so the addon ships a list of the 321 vendors, trainers, innkeepers and other service NPCs that give quests (from QuestieDB's Forever data), and learns when you talk to an NPC whether it has quests for you (per character). Quest givers get no outline until they have no quests left.
 - Fixed: the loot cursor (a pair of bags) got the outline of a single bag. Hover outlines now also switch to the greyed version of their cursor while out of range.
-- Fixed: holding Shift over a corpse shows the normal cursor, but the loot outline stayed. Cursor changes from pressing or releasing a modifier key now switch the look.
+- Fixed: holding Shift over a corpse swaps the pair of loot bags for a single bag, but the outline kept the pair's shape. The outline now follows the single bag while Shift is held, and cursor changes from other modifier keys are recognised too.
 - Fixed: hovering an enemy that doesn't change the cursor drew a sword outline around the normal one. Outlines now only appear when the game actually changes the cursor; recognising the target just picks the outline's shape.
 
 ## 1.0.0

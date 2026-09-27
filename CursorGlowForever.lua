@@ -36,6 +36,7 @@ local UNABLE_CELLS = {
 local HOVER_SHEETS = {
 	Attack = "UIAttackCursor2x",
 	LootAll = "UILootAllCursor2x",
+	Pickup = "UIPickupCursor2x", -- looting with shift held: a single bag
 	Skin = "UICursorSkin2x",
 	Mine = "UICursorMine2x",
 	GatherHerbs = "UICursorGather2x",
@@ -440,7 +441,8 @@ local function getHoverCursor()
 		if UnitIsDead("mouseover") then
 			if CanLootUnit then
 				local ok, hasLoot = pcall(CanLootUnit, UnitGUID("mouseover"))
-				if ok and hasLoot then return "LootAll" end
+				-- shift held (loot one item at a time) swaps the pair of bags for one
+				if ok and hasLoot then return IsShiftKeyDown() and "Pickup" or "LootAll" end
 			end
 			return tooltipShown and findGathering(2) or nil
 		end
@@ -780,6 +782,11 @@ driver:SetScript("OnUpdate", function()
 			and math.abs(change.time - state.leaveEventTime) >= SAME_FRAME
 		if not sameTarget then
 			if now - change.time > UI_HANDOVER then state.pendingChange = nil end
+		elseif change.modifier and (state.hoverCursor == "LootAll" or state.hoverCursor == "Pickup") then
+			-- shift over a corpse swaps between two loot cursors: identify it again
+			state.pendingChange, state.lookSettled, state.hoverCheckTime = nil, true, 0
+			state.cursorChanged = true
+			debug("loot cursor swapped by", "modifier key")
 		elseif change.moving or change.modifier or state.hoverCursor == "Attack" then
 			state.pendingChange = nil
 			state.cursorChanged, state.lookSettled, state.hoverCheckTime = not state.cursorChanged, true, 0
