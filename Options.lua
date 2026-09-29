@@ -1,6 +1,8 @@
 -- Options panel (Esc > Options > AddOns > Cursor Glow Forever, or /cg).
--- Widgets are built from plain textures so they work on any client.
+-- Widgets are built from plain textures so they work on any client. Text is
+-- translated in Locales.lua.
 local _, ns = ...
+local L = ns.L
 
 local panel = CreateFrame("Frame")
 panel:Hide()
@@ -188,7 +190,7 @@ local function createPreview()
 		sample.glove = sample:CreateTexture(nil, "ARTWORK")
 		sample.glove:SetTexture(ns.CURSORS.."Point")
 		sample.glove:SetAllPoints(sample)
-		local caption = createLabel(box, turning and "Turning the camera" or "Cursor", "GameFontDisableSmall")
+		local caption = createLabel(box, turning and L["Turning the camera"] or L["Cursor"], "GameFontDisableSmall")
 		caption:SetPoint("BOTTOM", box, "BOTTOMLEFT", 120 * (i - .5), 6)
 		box.samples[i] = sample
 	end
@@ -230,7 +232,7 @@ end
 local function build()
 	local title = createLabel(panel, ns.TITLE, "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 16, -16)
-	local subtitle = createLabel(panel, "A glow around your cursor, drawn where your mouse was while turning the camera.", "GameFontHighlightSmall")
+	local subtitle = createLabel(panel, L["A glow around your cursor, drawn where your mouse was while turning the camera."], "GameFontHighlightSmall")
 	subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
 	subtitle:SetWidth(300)
 	subtitle:SetJustifyH("LEFT")
@@ -242,12 +244,12 @@ local function build()
 	scroll:SetScript("OnSizeChanged", function(self, width) content:SetWidth(width) end)
 	content:SetSize(640, 700)
 
-	local enabled = createCheckbox("enabled", "Enable")
+	local enabled = createCheckbox("enabled", L["Enable"])
 	enabled:SetPoint("TOPLEFT", content, "TOPLEFT", 14, -4)
 	enabled.onChange = ns.setEnabled
 
-	local perCharacter = createCheckbox(nil, "Settings for this character only",
-		"Give this character its own settings, starting from the account-wide ones. Untick to go back to the account-wide settings (this character's are kept for next time).")
+	local perCharacter = createCheckbox(nil, L["Settings for this character only"],
+		L["Give this character its own settings, starting from the account-wide ones. Untick to go back to the account-wide settings (this character's are kept for next time)."])
 	perCharacter:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -4)
 	perCharacter:SetScript("OnClick", function(self)
 		ns.setCharacterSettings(self:GetChecked())
@@ -257,103 +259,103 @@ local function build()
 	function perCharacter:refresh() self:SetChecked(ns.charDB.useCharacterSettings) end
 
 	-- COLOUR
-	local classColor = createCheckbox("useClassColor", "Use class colour", "Colour the glow with your class colour. Untick to pick a custom colour.")
+	local classColor = createCheckbox("useClassColor", L["Use class colour"], L["Colour the glow with your class colour. Untick to pick a custom colour."])
 	classColor:SetPoint("TOPLEFT", perCharacter, "BOTTOMLEFT", 0, -16)
-	local swatch = createColorSwatch("color", "Custom colour", "useClassColor")
-	swatch:SetPoint("LEFT", classColor.label, "RIGHT", 24, 0)
+	local swatch = createColorSwatch("color", L["Custom colour"], "useClassColor")
+	swatch:SetPoint("TOPLEFT", classColor, "BOTTOMLEFT", 4, -6)
 
-	local glow = createSlider("glowOpacity", "Glow opacity", 0, 1, .05, "%.2f")
-	glow:SetPoint("TOPLEFT", classColor, "BOTTOMLEFT", 4, -34)
-	local glowSize = createSlider("glowSize", "Glow size", nil, nil, nil, nil,
+	local glow = createSlider("glowOpacity", L["Glow opacity"], 0, 1, .05, "%.2f")
+	glow:SetPoint("TOPLEFT", swatch, "BOTTOMLEFT", 0, -30)
+	local glowSize = createSlider("glowSize", L["Glow size"], nil, nil, nil, nil,
 		{{.5, "50%"}, {.75, "75%"}, {1, "100%"}, {1.25, "125%"}, {1.5, "150%"}, {1.75, "175%"}, {2, "200%"}},
-		"How far the soft glow reaches around the cursor, whatever the cursor size. The outline stays the same.")
+		L["How far the soft glow reaches around the cursor, whatever the cursor size. The outline stays the same."])
 	glowSize:SetPoint("TOPLEFT", glow, "BOTTOMLEFT", 0, -34)
-	local outline = createSlider("outlineOpacity", "Outline opacity", 0, 1, .05, "%.2f")
+	local outline = createSlider("outlineOpacity", L["Outline opacity"], 0, 1, .05, "%.2f")
 	outline:SetPoint("TOPLEFT", glowSize, "BOTTOMLEFT", 0, -34)
 
-	local sizes = {{-1, "Game setting"}}
+	local sizes = {{-1, L["Game setting"]}}
 	for i = 0, #ns.CURSOR_SIZES do
 		local size = ns.CURSOR_SIZES[i]
 		table.insert(sizes, {i, size.."x"..size})
 	end
-	local size = createSlider("cursorSize", "Cursor size", nil, nil, nil, nil, sizes,
-		"Size of your game cursor. Game setting reads the cursor size option (32x32 if it is on automatic).")
+	local size = createSlider("cursorSize", L["Cursor size"], nil, nil, nil, nil, sizes,
+		L["Size of your game cursor. Game setting reads the cursor size option (32x32 if it is on automatic)."])
 	size:SetPoint("TOPLEFT", outline, "BOTTOMLEFT", 0, -34)
 
-	local prediction = createSlider("prediction", "Movement prediction", 0, 2, .1, "%.1f frames", nil,
-		"Places the glow ahead of the cursor by this many frames of its movement, so it keeps up during fast movement. Lower it if the glow overshoots when you stop.")
+	local prediction = createSlider("prediction", L["Movement prediction"], 0, 2, .1, L["%.1f frames"], nil,
+		L["Places the glow ahead of the cursor by this many frames of its movement, so it keeps up during fast movement. Lower it if the glow overshoots when you stop."])
 	prediction:SetPoint("TOPLEFT", size, "BOTTOMLEFT", 0, -34)
 
-	local shakeToFind = createCheckbox("shakeToFind", "Shake to find",
-		"Shake the mouse quickly side to side to flash a bright halo around the cursor, so you can find it.")
+	local shakeToFind = createCheckbox("shakeToFind", L["Shake to find"],
+		L["Shake the mouse quickly side to side to flash a bright halo around the cursor, so you can find it."])
 	shakeToFind:SetPoint("TOPLEFT", prediction, "BOTTOMLEFT", -4, -20)
 
-	local shakeCount = createSlider("shakeCount", "Shakes needed", 2, 10, 1, "%d", nil,
-		"How many times in a row the mouse has to change direction to count as a shake. Raise it if the halo shows when you didn't mean it to.")
+	local shakeCount = createSlider("shakeCount", L["Shakes needed"], 2, 10, 1, "%d", nil,
+		L["How many times in a row the mouse has to change direction to count as a shake. Raise it if the halo shows when you didn't mean it to."])
 	shakeCount:SetPoint("TOPLEFT", shakeToFind, "BOTTOMLEFT", 4, -34)
 
-	local combatPulse = createCheckbox("combatPulse", "Pulse in combat",
-		"While you're in combat, the glow gently pulses brighter, with a soft halo.")
+	local combatPulse = createCheckbox("combatPulse", L["Pulse in combat"],
+		L["While you're in combat, the glow gently pulses brighter, with a soft halo."])
 	combatPulse:SetPoint("TOPLEFT", shakeCount, "BOTTOMLEFT", -4, -20)
 
-	local pulseGlowColor = createCheckbox("pulseUseGlowColor", "Pulse uses glow colour",
-		"Pulse in the glow colour. Untick to pick a pulse colour (a red, for example) that the glow takes on as it pulses, to show you're in combat.")
+	local pulseGlowColor = createCheckbox("pulseUseGlowColor", L["Pulse uses glow colour"],
+		L["Pulse in the glow colour. Untick to pick a pulse colour (a red, for example) that the glow takes on as it pulses, to show you're in combat."])
 	pulseGlowColor:SetPoint("TOPLEFT", combatPulse, "BOTTOMLEFT", 0, -4)
-	local pulseSwatch = createColorSwatch("pulseColor", "Pulse colour", "pulseUseGlowColor")
-	pulseSwatch:SetPoint("LEFT", pulseGlowColor.label, "RIGHT", 24, 0)
+	local pulseSwatch = createColorSwatch("pulseColor", L["Pulse colour"], "pulseUseGlowColor")
+	pulseSwatch:SetPoint("TOPLEFT", pulseGlowColor, "BOTTOMLEFT", 4, -6)
 
 	-- BEHAVIOUR (right column)
-	local showWhen = createSlider("showWhen", "Show the glow", nil, nil, nil, nil,
-		{{"always", "Always"}, {"combat", "In combat"}, {"noCombat", "Out of combat"}},
-		"Show the glow always, only in combat, or only out of combat. Shake to find still shows it for a moment.", 160)
+	local showWhen = createSlider("showWhen", L["Show the glow"], nil, nil, nil, nil,
+		{{"always", L["Always"]}, {"combat", L["In combat"]}, {"noCombat", L["Out of combat"]}},
+		L["Show the glow always, only in combat, or only out of combat. Shake to find still shows it for a moment."], 130)
 	showWhen:SetPoint("TOPLEFT", enabled, "TOPLEFT", 344, -20)
 
-	local hover = createCheckbox("hideOnHover", "Hide on hover targets",
-		"Hide the glove glow while the cursor has a hover look (mailbox, enemy, NPC...).")
+	local hover = createCheckbox("hideOnHover", L["Hide on hover targets"],
+		L["Hide the glove glow while the cursor has a hover look (mailbox, enemy, NPC...)."])
 	hover:SetPoint("TOPLEFT", showWhen, "BOTTOMLEFT", -4, -20)
 
-	local outlineHover = createCheckbox("outlineHover", "Outline hover cursors",
-		"Outline the hover cursor (loot bag, pickaxe, sword...) when it can be told which one is showing. Unrecognised ones get no outline.")
+	local outlineHover = createCheckbox("outlineHover", L["Outline hover cursors"],
+		L["Outline the hover cursor (loot bag, pickaxe, sword...) when it can be told which one is showing. Unrecognised ones get no outline."])
 	outlineHover:SetPoint("TOPLEFT", hover, "BOTTOMLEFT", 0, -4)
 
-	local outlineServices = createCheckbox("outlineServices", "Outline vendors and services",
-		"Also outline the cursors of vendors, repairers, bankers, innkeepers, flight masters, stable masters and trainers. An NPC with a quest for you shows the quest cursor instead, which can't always be told in advance.")
+	local outlineServices = createCheckbox("outlineServices", L["Outline vendors and services"],
+		L["Also outline the cursors of vendors, repairers, bankers, innkeepers, flight masters, stable masters and trainers. An NPC with a quest for you shows the quest cursor instead, which can't always be told in advance."])
 	outlineServices:SetPoint("TOPLEFT", outlineHover, "BOTTOMLEFT", 0, -4)
 
-	local dimRange = createCheckbox("dimOutOfRange", "Dim outlines out of range",
-		"Weaken the hover outline on NPCs and corpses while they are too far away to interact with, and bring it back to full strength in range.")
+	local dimRange = createCheckbox("dimOutOfRange", L["Dim outlines out of range"],
+		L["Weaken the hover outline on NPCs and corpses while they are too far away to interact with, and bring it back to full strength in range."])
 	dimRange:SetPoint("TOPLEFT", outlineServices, "BOTTOMLEFT", 0, -4)
 
-	local rangeStrength = createSlider("outOfRangeStrength", "Out of range strength", .1, 1, .05, "%.2f", nil,
-		"How strong the hover outline is while out of interaction range, compared with in range.")
+	local rangeStrength = createSlider("outOfRangeStrength", L["Out of range strength"], .1, 1, .05, "%.2f", nil,
+		L["How strong the hover outline is while out of interaction range, compared with in range."])
 	rangeStrength:SetPoint("TOPLEFT", dimRange, "BOTTOMLEFT", 4, -34)
 
-	local glove = createCheckbox("gloveWhileTurning", "Draw the glove while turning",
-		"The game hides its cursor while you turn the camera; draw the glove with the glow where the mouse was.")
+	local glove = createCheckbox("gloveWhileTurning", L["Draw the glove while turning"],
+		L["The game hides its cursor while you turn the camera; draw the glove with the glow where the mouse was."])
 	glove:SetPoint("TOPLEFT", rangeStrength, "BOTTOMLEFT", -4, -20)
 
-	local gloveGlowColor = createCheckbox("gloveUseGlowColor", "Glove uses glow colour",
-		"Tint the drawn glove with the glow colour. Untick to pick a separate glove colour.")
+	local gloveGlowColor = createCheckbox("gloveUseGlowColor", L["Glove uses glow colour"],
+		L["Tint the drawn glove with the glow colour. Untick to pick a separate glove colour."])
 	gloveGlowColor:SetPoint("TOPLEFT", glove, "BOTTOMLEFT", 0, -4)
-	local gloveSwatch = createColorSwatch("gloveColor", "Glove colour", "gloveUseGlowColor")
+	local gloveSwatch = createColorSwatch("gloveColor", L["Glove colour"], "gloveUseGlowColor")
 	gloveSwatch:SetPoint("TOPLEFT", gloveGlowColor, "BOTTOMLEFT", 4, -6)
 
-	local tint = createSlider("gloveTint", "Glove tint", 0, 1, .05, "%.2f", nil,
-		"How strongly the glove drawn while turning the camera is tinted with its colour.")
+	local tint = createSlider("gloveTint", L["Glove tint"], 0, 1, .05, "%.2f", nil,
+		L["How strongly the glove drawn while turning the camera is tinted with its colour."])
 	tint:SetPoint("TOPLEFT", gloveSwatch, "BOTTOMLEFT", 0, -30)
 
-	local intensity = createSlider("turningIntensity", "Glow intensity while turning", 1, 2, .05, "%.2fx", nil,
-		"How much stronger the glow is around the glove drawn while turning the camera.")
+	local intensity = createSlider("turningIntensity", L["Glow intensity while turning"], 1, 2, .05, "%.2fx", nil,
+		L["How much stronger the glow is around the glove drawn while turning the camera."])
 	intensity:SetPoint("TOPLEFT", tint, "BOTTOMLEFT", 0, -34)
 
-	local idlePulse = createCheckbox("idlePulse", "Pulse when idle",
-		"After a few seconds without moving the mouse, the glow slowly fades out and back in (the outline stays) until you move it again.")
+	local idlePulse = createCheckbox("idlePulse", L["Pulse when idle"],
+		L["After a few seconds without moving the mouse, the glow slowly fades out and back in (the outline stays) until you move it again."])
 	idlePulse:SetPoint("TOPLEFT", intensity, "BOTTOMLEFT", -4, -20)
 
 	local reset = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	reset:SetSize(140, 22)
-	reset:SetText("Reset to defaults")
-	reset:SetPoint("TOPLEFT", pulseGlowColor, "BOTTOMLEFT", 0, -16)
+	reset:SetText(L["Reset to defaults"])
+	reset:SetPoint("TOPLEFT", pulseSwatch, "BOTTOMLEFT", -4, -16)
 	reset:SetScript("OnClick", function()
 		for key, value in pairs(ns.defaults) do
 			ns.db[key] = type(value) == "table" and CopyTable(value) or value

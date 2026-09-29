@@ -12,4 +12,5 @@ QuestGivers.lua
 NPCServices.lua
 NPCTitles.lua
 CursorGlowForever.lua
+Locales.lua
 Options.lua

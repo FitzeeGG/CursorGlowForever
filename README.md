@@ -42,7 +42,7 @@ The glow is placed where your cursor is heading, so it stays on the cursor durin
 
 ## Settings
 
-Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > Cursor Glow Forever**. A live preview at the top shows your cursor and the glove drawn while turning the camera as you change them. Settings are account-wide, or per character if you tick "Settings for this character only".
+Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > Cursor Glow Forever**. A live preview at the top shows your cursor and the glove drawn while turning the camera as you change them. Settings are account-wide, or per character if you tick "Settings for this character only". The settings page is available in English, German, French, Spanish, Portuguese, Italian, Russian, Korean and Chinese; spotted an awkward translation? Please let me know.
 
 | Appearance | Behaviour |
 |---|---|

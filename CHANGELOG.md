@@ -2,6 +2,7 @@
 
 ## 1.0.2
 
+- The settings page is now translated into German, French, Spanish, Portuguese, Italian, Russian, Korean and Chinese (Simplified and Traditional), using the game's own words where it has them. The translations aren't by native speakers yet, so corrections are very welcome.
 - Non-English clients: NPCs new to Forever are now recognised by their title in German, French, Spanish, Portuguese, Russian, Korean and Chinese, from the titles in QuestieDB's translated Forever NPC data (a title counts when every known NPC with it shows the same cursor). Class and pet trainer titles are recognised too.
 - New option "Settings for this character only": give a character its own settings, starting from the account-wide ones. Untick it to go back to the account-wide settings; the character's own are kept for next time.
 - New "Glow size" slider (50% to 200%): make the soft glow wider or tighter, whatever the cursor size. The glow still hugs the cursor; the outline stays the same.
