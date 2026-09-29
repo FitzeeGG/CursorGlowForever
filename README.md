@@ -42,7 +42,7 @@ The glow is placed where your cursor is heading, so it stays on the cursor durin
 
 ## Settings
 
-Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > Cursor Glow Forever**.
+Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > Cursor Glow Forever**. A live preview at the top shows your cursor and the glove drawn while turning the camera as you change them.
 
 | Appearance | Behaviour |
 |---|---|

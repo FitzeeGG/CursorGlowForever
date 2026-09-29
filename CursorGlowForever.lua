@@ -137,6 +137,7 @@ for _, ring in ipairs(OUTLINE_RINGS) do
 	end
 end
 ns.cursor = cursor
+ns.TEXTURES, ns.CURSORS = TEXTURES, CURSORS
 
 
 -- mode: "base", "turning" (drawn glove, stronger glow) or a HOVER_SHEETS key
@@ -202,6 +203,16 @@ function ns.getColor()
 		if color then return color.r, color.g, color.b end
 	end
 	return unpack(db.color)
+end
+
+
+-- the drawn glove: a tinge of the glow colour, or of the glove's own colour
+function ns.getGloveColor()
+	local db = ns.db
+	local tint = db.gloveTint
+	local r, g, b = ns.getColor()
+	if not db.gloveUseGlowColor then r, g, b = unpack(db.gloveColor) end
+	return 1 - (1 - r) * tint, 1 - (1 - g) * tint, 1 - (1 - b) * tint
 end
 
 
@@ -285,11 +296,7 @@ function ns.updateLayout()
 			math.cos(texture.angle) * texture.ring.radius * unit, -math.sin(texture.angle) * texture.ring.radius * unit)
 	end
 
-	-- a tinge of the glow colour, or of the glove's own colour
-	local tint = db.gloveTint
-	local gr, gg, gb = r, g, b
-	if not db.gloveUseGlowColor then gr, gg, gb = unpack(db.gloveColor) end
-	cursor.glove:SetVertexColor(1 - (1 - gr) * tint, 1 - (1 - gg) * tint, 1 - (1 - gb) * tint)
+	cursor.glove:SetVertexColor(ns.getGloveColor())
 	ns.updateColor()
 	ns.refreshHoverArt(true)
 	ns.updateOpacity()

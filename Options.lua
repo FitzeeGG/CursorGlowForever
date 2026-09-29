@@ -5,6 +5,11 @@ local _, ns = ...
 local panel = CreateFrame("Frame")
 panel:Hide()
 local widgets = {}
+-- the settings scroll under a fixed header holding the live preview
+local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
+local content = CreateFrame("Frame", nil, scroll)
+scroll:SetScrollChild(content)
+local PREVIEW_MAX = 40 -- largest sample cursor, so its glow fits the preview
 
 
 local function onChanged()
@@ -23,7 +28,7 @@ end
 
 
 local function createCheckbox(key, text, tooltip)
-	local check = CreateFrame("CheckButton", nil, panel)
+	local check = CreateFrame("CheckButton", nil, content)
 	check:SetSize(26, 26)
 	check:SetNormalTexture("Interface/Buttons/UI-CheckBox-Up")
 	check:SetPushedTexture("Interface/Buttons/UI-CheckBox-Down")
@@ -56,7 +61,7 @@ end
 
 -- values: list of {value, text} for a slider over fixed choices
 local function createSlider(key, text, minValue, maxValue, step, format, values, tooltip, width)
-	local slider = CreateFrame("Slider", nil, panel)
+	local slider = CreateFrame("Slider", nil, content)
 	slider:SetOrientation("HORIZONTAL")
 	slider:SetSize(width or 220, 16)
 	slider:SetHitRectInsets(0, 0, -6, -6)
@@ -128,7 +133,7 @@ end
 
 -- disabledBy: the checkbox setting that, while ticked, makes this colour unused
 local function createColorSwatch(key, text, disabledBy)
-	local swatch = CreateFrame("Button", nil, panel)
+	local swatch = CreateFrame("Button", nil, content)
 	swatch:SetSize(22, 22)
 	local border = swatch:CreateTexture(nil, "BACKGROUND")
 	border:SetColorTexture(1, 1, 1, .8)
@@ -162,14 +167,83 @@ local function createColorSwatch(key, text, disabledBy)
 end
 
 
+-- Live preview: the cursor and the glove drawn while turning the camera, with
+-- the current colour, glow, outline, size and glove settings.
+local function createPreview()
+	local box = CreateFrame("Frame", nil, panel)
+	box:SetSize(240, 118)
+	box:SetClipsChildren(true)
+	local background = box:CreateTexture(nil, "BACKGROUND", nil, -8)
+	background:SetColorTexture(.05, .05, .06, 1)
+	background:SetAllPoints()
+	box.samples = {}
+	for i, turning in ipairs({false, true}) do
+		local sample = CreateFrame("Frame", nil, box)
+		sample.turning = turning
+		sample.glow = sample:CreateTexture(nil, "BACKGROUND")
+		sample.glow:SetTexture(ns.TEXTURES.."point-glow")
+		sample.glow:SetPoint("CENTER", sample, "CENTER")
+		sample.outline = sample:CreateTexture(nil, "BORDER")
+		sample.outline:SetTexture(ns.TEXTURES.."point-outline")
+		sample.outline:SetPoint("CENTER", sample, "CENTER")
+		sample.glove = sample:CreateTexture(nil, "ARTWORK")
+		sample.glove:SetTexture(ns.CURSORS.."Point")
+		sample.glove:SetAllPoints(sample)
+		local caption = createLabel(box, turning and "Turning the camera" or "Cursor", "GameFontDisableSmall")
+		caption:SetPoint("BOTTOM", box, "BOTTOMLEFT", 120 * (i - .5), 6)
+		box.samples[i] = sample
+	end
+
+	function box:refresh()
+		local db = ns.db
+		local r, g, b = ns.getColor()
+		-- the cursor's real size on screen, within what fits the box
+		local size = ns.cursor.size or 32
+		local scale = (UIParent:GetEffectiveScale() or 1) / (self:GetEffectiveScale() or 1)
+		size = math.min(size * scale, PREVIEW_MAX)
+		for i, sample in ipairs(self.samples) do
+			local intensity = sample.turning and db.turningIntensity or 1
+			sample:SetSize(size, size)
+			sample:ClearAllPoints()
+			sample:SetPoint("CENTER", self, "TOPLEFT", 120 * (i - .5), -52)
+			sample.glow:SetSize(size * 4, size * 4)
+			sample.glow:SetVertexColor(r, g, b)
+			sample.glow:SetAlpha(math.min(db.glowOpacity * intensity, 1))
+			sample.outline:SetSize(size * 2, size * 2)
+			sample.outline:SetVertexColor(r, g, b)
+			sample.outline:SetAlpha(math.min(db.outlineOpacity * intensity, 1))
+			if sample.turning then
+				sample.glove:SetVertexColor(ns.getGloveColor())
+			else
+				sample.glove:SetVertexColor(1, 1, 1)
+			end
+			-- the game draws no glove while turning without the option
+			sample:SetShown(not sample.turning or db.gloveWhileTurning)
+		end
+		self:SetAlpha(db.enabled and 1 or .4)
+	end
+	table.insert(widgets, box)
+	return box
+end
+
+
 local function build()
 	local title = createLabel(panel, ns.TITLE, "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 16, -16)
 	local subtitle = createLabel(panel, "A glow around your cursor, drawn where your mouse was while turning the camera.", "GameFontHighlightSmall")
 	subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
+	subtitle:SetWidth(300)
+	subtitle:SetJustifyH("LEFT")
+
+	local preview = createPreview()
+	preview:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -16, -8)
+	scroll:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -132)
+	scroll:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -28, 8)
+	scroll:SetScript("OnSizeChanged", function(self, width) content:SetWidth(width) end)
+	content:SetSize(640, 700)
 
 	local enabled = createCheckbox("enabled", "Enable")
-	enabled:SetPoint("TOPLEFT", subtitle, "BOTTOMLEFT", -2, -14)
+	enabled:SetPoint("TOPLEFT", content, "TOPLEFT", 14, -4)
 	enabled.onChange = ns.setEnabled
 
 	-- COLOUR
@@ -262,7 +336,7 @@ local function build()
 		"After a few seconds without moving the mouse, the glow slowly fades out and back in (the outline stays) until you move it again.")
 	idlePulse:SetPoint("TOPLEFT", intensity, "BOTTOMLEFT", -4, -20)
 
-	local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+	local reset = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	reset:SetSize(140, 22)
 	reset:SetText("Reset to defaults")
 	reset:SetPoint("TOPLEFT", pulseGlowColor, "BOTTOMLEFT", 0, -16)
@@ -273,6 +347,19 @@ local function build()
 		ns.setEnabled(ns.db.enabled)
 		onChanged()
 	end)
+	content.lowest = {reset, idlePulse}
+end
+
+
+-- the scroll area ends just below the lowest setting
+local function fitContent()
+	local top = content:GetTop()
+	if not top then return end
+	local bottom = top
+	for _, widget in ipairs(content.lowest) do
+		bottom = math.min(bottom, widget:GetBottom() or bottom)
+	end
+	content:SetHeight(top - bottom + 16)
 end
 
 
@@ -282,6 +369,7 @@ panel:SetScript("OnShow", function(self)
 		self.built = true
 	end
 	for _, widget in ipairs(widgets) do widget:refresh() end
+	fitContent()
 end)
 
 

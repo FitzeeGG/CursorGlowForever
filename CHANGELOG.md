@@ -2,6 +2,7 @@
 
 ## 1.0.2
 
+- New: a live preview at the top of the settings shows the cursor and the glove drawn while turning the camera with your colour, glow, outline and glove settings as you change them. The settings now scroll beneath it.
 - New option "Pulse when idle" (off by default): after a few seconds without moving the mouse, the glow slowly fades out and back in (the outline stays) until you move it again.
 - New option "Show the glow": always (the default), in combat only, or out of combat only. Shake to find still shows the glow for a moment either way.
 - New option "Shake to find" (on by default): shake the mouse quickly side to side and a bright halo bursts out around the cursor, fading over a second. A "Shakes needed" slider sets how many direction changes in a row it takes (7 by default, 2 to 10).
