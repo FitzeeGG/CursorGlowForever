@@ -83,7 +83,10 @@ ns.defaults = {
 	gloveColor = {1, 1, 1},
 	turningIntensity = 1.4,
 	shakeToFind = true,
+	shakeCount = 5, -- direction changes in a row
 	combatPulse = true,
+	pulseUseGlowColor = true,
+	pulseColor = {1, .1, .05},
 	prediction = 1,
 }
 ns.CURSOR_SIZES = CURSOR_SIZES
@@ -220,6 +223,27 @@ function ns.updateOpacity(effect)
 end
 
 
+-- The glow colour, moved toward the combat pulse colour by pulseTint (0 to 1).
+-- The halo blends to the pulse colour by haloTint.
+function ns.updateColor(pulseTint, haloTint)
+	local db = ns.db
+	if not db then return end
+	pulseTint = pulseTint or cursor.pulseTint or 0
+	haloTint = haloTint or cursor.haloTint or 0
+	cursor.pulseTint, cursor.haloTint = pulseTint, haloTint
+	local r, g, b = ns.getColor()
+	local pr, pg, pb = r, g, b
+	if not db.pulseUseGlowColor then pr, pg, pb = unpack(db.pulseColor) end
+	local function mix(t) return r + (pr - r) * t, g + (pg - g) * t, b + (pb - b) * t end
+	cursor.halo:SetVertexColor(mix(haloTint))
+	r, g, b = mix(pulseTint)
+	cursor.glow:SetVertexColor(r, g, b)
+	cursor.outline:SetVertexColor(r, g, b)
+	cursor.hover.soft:SetVertexColor(r, g, b)
+	for _, texture in ipairs(cursor.hover.copies) do texture:SetColorTexture(r, g, b) end
+end
+
+
 -- halo: diameter in cursor sizes and alpha, from shake to find and the combat pulse
 function ns.updateHalo(diameter, alpha)
 	if not cursor.size then return end
@@ -242,19 +266,15 @@ function ns.updateLayout()
 	-- covers four times it, so it fades out before its edges
 	cursor.outline:SetSize(size * 2, size * 2)
 	cursor.glow:SetSize(size * 4, size * 4)
-	cursor.halo:SetVertexColor(r, g, b)
 	ns.updateHalo(cursor.haloDiameter or 3, cursor.haloAlpha or 0)
 	for _, texture in ipairs({cursor.glow, cursor.outline}) do
 		texture:ClearAllPoints()
 		texture:SetPoint("CENTER", cursor, "CENTER")
-		texture:SetVertexColor(r, g, b)
 	end
 
 	cursor.hover.soft:SetSize(SOFT_DIAMETER * unit, SOFT_DIAMETER * unit)
 	cursor.hover.soft:SetPoint("CENTER", cursor, "CENTER")
-	cursor.hover.soft:SetVertexColor(r, g, b)
 	for _, texture in ipairs(cursor.hover.copies) do
-		texture:SetColorTexture(r, g, b)
 		texture:SetSize(size, size)
 		texture:ClearAllPoints()
 		texture:SetPoint("TOPLEFT", cursor, "TOPLEFT",
@@ -266,6 +286,7 @@ function ns.updateLayout()
 	local gr, gg, gb = r, g, b
 	if not db.gloveUseGlowColor then gr, gg, gb = unpack(db.gloveColor) end
 	cursor.glove:SetVertexColor(1 - (1 - gr) * tint, 1 - (1 - gg) * tint, 1 - (1 - gb) * tint)
+	ns.updateColor()
 	ns.refreshHoverArt(true)
 	ns.updateOpacity()
 end
@@ -739,16 +760,19 @@ end
 
 
 -- EFFECTS
--- Shake to find: quick side to side swings of the mouse (direction changes
--- over a few percent of the screen each, close together) brighten the glow and
--- send a halo out around the cursor, easing back over a second. Combat pulse:
--- while in combat the glow and a faint halo slowly pulse brighter. The shaped
--- glow keeps its size (scaling it would widen its cursor-shaped middle).
-local SHAKE_REVERSALS, SHAKE_WINDOW, SHAKE_SWING = 3, .8, .03 -- swing: fraction of screen height
+-- Shake to find: quick side to side swings of the mouse (the shakeCount
+-- setting's direction changes in a row, each after a swing over a few percent
+-- of the screen and soon after the last) brighten the glow and send a halo out
+-- around the cursor, easing back over a second. Combat pulse: while in combat
+-- the glow and a faint halo slowly pulse brighter, tinted with the pulse
+-- colour. The shaped glow keeps its size (scaling it would widen its
+-- cursor-shaped middle).
+local SHAKE_GAP, SHAKE_SWING = .35, .03 -- most seconds between direction changes; swing: fraction of screen height
 local FIND_TIME, FIND_BRIGHTNESS = 1, 1 -- extra brightness at the start
 local FIND_HALO_FROM, FIND_HALO_TO, FIND_HALO_ALPHA = 4, 10, 1 -- halo diameter (cursor sizes) and alpha
 local PULSE_PERIOD, PULSE_BRIGHTNESS, PULSE_HALO, PULSE_HALO_ALPHA = 1.2, .6, 5, .55
-local shake = {direction = 0, swing = 0, reversals = {}, lastX = nil, findTime = -10}
+local PULSE_TINT = .7 -- how far the glow moves to the pulse colour at the peak
+local shake = {direction = 0, swing = 0, count = 0, lastReversal = -10, lastX = nil, findTime = -10}
 
 
 local function detectShake(x, now)
@@ -761,15 +785,16 @@ local function detectShake(x, now)
 		shake.swing = shake.swing + math.abs(dx)
 		return
 	end
-	-- a direction change after a long enough swing counts
 	local screenHeight = UIParent:GetHeight() * UIParent:GetEffectiveScale()
+	-- a direction change after a long enough swing counts, and a pause between
+	-- them starts the count over
 	if shake.direction ~= 0 and shake.swing >= screenHeight * SHAKE_SWING then
-		table.insert(shake.reversals, now)
+		if now - shake.lastReversal > SHAKE_GAP then shake.count = 0 end
+		shake.count, shake.lastReversal = shake.count + 1, now
 	end
 	shake.direction, shake.swing = direction, math.abs(dx)
-	while shake.reversals[1] and now - shake.reversals[1] > SHAKE_WINDOW do table.remove(shake.reversals, 1) end
-	if #shake.reversals >= SHAKE_REVERSALS and now - shake.findTime > FIND_TIME then
-		shake.findTime, shake.reversals = now, {}
+	if shake.count >= ns.db.shakeCount and now - shake.findTime > FIND_TIME then
+		shake.findTime, shake.count = now, 0
 		ns.debugPrint("shake to find")
 	end
 end
@@ -779,10 +804,12 @@ function ns.updateEffects(x)
 	local db = ns.db
 	local now = GetTime()
 	local brightness, haloDiameter, haloAlpha = 1, FIND_HALO_FROM, 0
+	local pulseTint, pulseAlpha = 0, 0
 	if db.combatPulse and (InCombatLockdown() or UnitAffectingCombat("player")) then
 		local wave = .5 + .5 * math.sin(now * 2 * math.pi / PULSE_PERIOD)
 		brightness = 1 + PULSE_BRIGHTNESS * wave
-		haloDiameter, haloAlpha = PULSE_HALO, PULSE_HALO_ALPHA * wave
+		pulseTint, pulseAlpha = PULSE_TINT * wave, PULSE_HALO_ALPHA * wave
+		haloDiameter, haloAlpha = PULSE_HALO, pulseAlpha
 	end
 	if db.shakeToFind then
 		detectShake(x, now)
@@ -795,6 +822,10 @@ function ns.updateEffects(x)
 			haloAlpha = math.max(haloAlpha, FIND_HALO_ALPHA * fade)
 		end
 	end
+	-- the halo takes the pulse colour as far as the pulse makes it
+	local haloTint = haloAlpha > 0 and pulseAlpha / haloAlpha or 0
+	if db.pulseUseGlowColor then pulseTint, haloTint = 0, 0 end
+	if pulseTint ~= cursor.pulseTint or haloTint ~= cursor.haloTint then ns.updateColor(pulseTint, haloTint) end
 	if haloDiameter ~= cursor.haloDiameter or haloAlpha ~= cursor.haloAlpha then
 		ns.updateHalo(haloDiameter, haloAlpha)
 	end

@@ -2,8 +2,8 @@
 
 ## 1.0.2
 
-- New option "Shake to find" (on by default): shake the mouse quickly side to side and a bright halo bursts out around the cursor, fading over a second.
-- New option "Pulse in combat" (on by default): while you're in combat the glow gently pulses brighter, with a soft halo.
+- New option "Shake to find" (on by default): shake the mouse quickly side to side and a bright halo bursts out around the cursor, fading over a second. A "Shakes needed" slider sets how many direction changes in a row it takes (5 by default, 2 to 10).
+- New option "Pulse in combat" (on by default): while you're in combat the glow gently pulses brighter, with a soft halo. Untick "Pulse uses glow colour" to pick a pulse colour, such as red, that the glow takes on as it pulses.
 - Fixed: faint square lines at the edges of the glow. The glow texture now fades out completely before its edges.
 - Fixed: hovering a target from too far away and then walking into range kept the normal glow instead of the hover outline. The outline now appears when the target's cursor does as you approach, and goes away again if you walk far away (beyond follow range), without mistaking an NPC's longer interaction range for that.
 - Fixed: walking in or out of range of a target while following it with the mouse flipped the glow (the normal glow showed around the target's cursor). While you or the target are moving, a cursor change on the same target is now read as a range change.

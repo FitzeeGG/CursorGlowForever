@@ -200,9 +200,19 @@ local function build()
 		"Shake the mouse quickly side to side to flash a bright halo around the cursor, so you can find it.")
 	shakeToFind:SetPoint("TOPLEFT", prediction, "BOTTOMLEFT", -4, -20)
 
+	local shakeCount = createSlider("shakeCount", "Shakes needed", 2, 10, 1, "%d", nil,
+		"How many times in a row the mouse has to change direction to count as a shake. Raise it if the halo shows when you didn't mean it to.")
+	shakeCount:SetPoint("TOPLEFT", shakeToFind, "BOTTOMLEFT", 4, -34)
+
 	local combatPulse = createCheckbox("combatPulse", "Pulse in combat",
 		"While you're in combat, the glow gently pulses brighter, with a soft halo.")
-	combatPulse:SetPoint("TOPLEFT", shakeToFind, "BOTTOMLEFT", 0, -4)
+	combatPulse:SetPoint("TOPLEFT", shakeCount, "BOTTOMLEFT", -4, -20)
+
+	local pulseGlowColor = createCheckbox("pulseUseGlowColor", "Pulse uses glow colour",
+		"Pulse in the glow colour. Untick to pick a pulse colour (a red, for example) that the glow takes on as it pulses, to show you're in combat.")
+	pulseGlowColor:SetPoint("TOPLEFT", combatPulse, "BOTTOMLEFT", 0, -4)
+	local pulseSwatch = createColorSwatch("pulseColor", "Pulse colour", "pulseUseGlowColor")
+	pulseSwatch:SetPoint("LEFT", pulseGlowColor.label, "RIGHT", 24, 0)
 
 	-- BEHAVIOUR (right column)
 	local hover = createCheckbox("hideOnHover", "Hide on hover targets",
@@ -246,7 +256,7 @@ local function build()
 	local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	reset:SetSize(140, 22)
 	reset:SetText("Reset to defaults")
-	reset:SetPoint("TOPLEFT", combatPulse, "BOTTOMLEFT", 0, -16)
+	reset:SetPoint("TOPLEFT", pulseGlowColor, "BOTTOMLEFT", 0, -16)
 	reset:SetScript("OnClick", function()
 		for key, value in pairs(ns.defaults) do
 			ns.db[key] = type(value) == "table" and CopyTable(value) or value

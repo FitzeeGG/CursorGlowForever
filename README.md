@@ -32,7 +32,7 @@ The outline on NPCs and corpses is fainter while they're too far away to interac
 Hold the left or right mouse button and the game hides your cursor. Cursor Glow Forever draws the glove where your mouse was, with a stronger glow and a tint of your colour (or its own colour), so you always know where it'll come back.
 
 ### Shake to find, and a pulse in combat
-Lost it anyway? Shake the mouse quickly side to side and a bright halo bursts out around the cursor. In combat the glow gently pulses so it's easy to keep track of. Both can be turned off in the settings.
+Lost it anyway? Shake the mouse quickly side to side and a bright halo bursts out around the cursor; you choose how many shakes it takes. In combat the glow gently pulses so it's easy to keep track of, in your glow colour or a colour of its own (a tinge of red, say, to show you're in combat). Both can be turned off in the settings.
 
 ### Keeps up with you
 The glow is placed where your cursor is heading, so it stays on the cursor during fast movement. It also copes cleanly with alt-tabbing and loading screens.
@@ -48,8 +48,8 @@ Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > 
 | Outline opacity | Dim outlines out of range, and how faint |
 | Cursor size (follows the game setting) | Draw the glove while turning the camera |
 | Movement prediction | Glove colour and tint |
-| Shake to find | Glow intensity while turning |
-| Pulse in combat | Reset to defaults |
+| Shake to find, and shakes needed | Glow intensity while turning |
+| Pulse in combat, and its colour | Reset to defaults |
 
 ## Commands
 
