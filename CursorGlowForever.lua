@@ -457,9 +457,12 @@ local function getHoverCursor()
 			return tooltipShown and findGathering(2) or nil
 		end
 		if UnitCanAttack("player", "mouseover") then return "Attack" end
-		if tooltipShown and not UnitPlayerControlled("mouseover")
-			and not isKnownQuestGiver("mouseover") then
-			return findText(2, 2, NPC_TITLES)
+		if not UnitPlayerControlled("mouseover") and not isKnownQuestGiver("mouseover") then
+			-- the NPC's services from the built-in data, else its title
+			local npcID = tonumber(getNPCID("mouseover") or "")
+			local service = npcID and ns.NPC_SERVICES and ns.NPC_SERVICES[npcID]
+			if service then return service end
+			return tooltipShown and findText(2, 2, NPC_TITLES) or nil
 		end
 		return
 	end

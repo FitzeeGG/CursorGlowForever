@@ -9,5 +9,6 @@
 ## SavedVariablesPerCharacter: CursorGlowForeverCharDB
 
 QuestGivers.lua
+NPCServices.lua
 CursorGlowForever.lua
 Options.lua
