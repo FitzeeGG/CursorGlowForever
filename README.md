@@ -32,7 +32,7 @@ The outline on NPCs and corpses is fainter while they're too far away to interac
 Hold the left or right mouse button and the game hides your cursor. Cursor Glow Forever draws the glove where your mouse was, with a stronger glow and a tint of your colour (or its own colour), so you always know where it'll come back.
 
 ### Shake to find, and a pulse in combat
-Lost it anyway? Shake the mouse quickly side to side and a bright halo bursts out around the cursor; you choose how many shakes it takes. In combat the glow gently pulses so it's easy to keep track of, in your glow colour or a colour of its own (a tinge of red, say, to show you're in combat). Both can be turned off in the settings.
+Lost it anyway? Shake the mouse quickly side to side and a bright halo bursts out around the cursor; you choose how many shakes it takes. Turn on the combat pulse and the glow gently pulses while you fight, so it's easy to keep track of, in your glow colour or a colour of its own (a tinge of red, say, to show you're in combat).
 
 ### Keeps up with you
 The glow is placed where your cursor is heading, so it stays on the cursor during fast movement. It also copes cleanly with alt-tabbing and loading screens.
