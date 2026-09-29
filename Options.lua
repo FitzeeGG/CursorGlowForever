@@ -181,7 +181,6 @@ local function createPreview()
 		local sample = CreateFrame("Frame", nil, box)
 		sample.turning = turning
 		sample.glow = sample:CreateTexture(nil, "BACKGROUND")
-		sample.glow:SetTexture(ns.TEXTURES.."point-glow")
 		sample.glow:SetPoint("CENTER", sample, "CENTER")
 		sample.outline = sample:CreateTexture(nil, "BORDER")
 		sample.outline:SetTexture(ns.TEXTURES.."point-outline")
@@ -206,6 +205,7 @@ local function createPreview()
 			sample:SetSize(size, size)
 			sample:ClearAllPoints()
 			sample:SetPoint("CENTER", self, "TOPLEFT", 120 * (i - .5), -52)
+			sample.glow:SetTexture(ns.getGlowTexture())
 			sample.glow:SetSize(size * 4, size * 4)
 			sample.glow:SetVertexColor(r, g, b)
 			sample.glow:SetAlpha(math.min(db.glowOpacity * intensity, 1))
@@ -254,8 +254,12 @@ local function build()
 
 	local glow = createSlider("glowOpacity", "Glow opacity", 0, 1, .05, "%.2f")
 	glow:SetPoint("TOPLEFT", classColor, "BOTTOMLEFT", 4, -34)
+	local glowSize = createSlider("glowSize", "Glow size", nil, nil, nil, nil,
+		{{.5, "50%"}, {.75, "75%"}, {1, "100%"}, {1.25, "125%"}, {1.5, "150%"}, {1.75, "175%"}, {2, "200%"}},
+		"How far the soft glow reaches around the cursor, whatever the cursor size. The outline stays the same.")
+	glowSize:SetPoint("TOPLEFT", glow, "BOTTOMLEFT", 0, -34)
 	local outline = createSlider("outlineOpacity", "Outline opacity", 0, 1, .05, "%.2f")
-	outline:SetPoint("TOPLEFT", glow, "BOTTOMLEFT", 0, -34)
+	outline:SetPoint("TOPLEFT", glowSize, "BOTTOMLEFT", 0, -34)
 
 	local sizes = {{-1, "Game setting"}}
 	for i = 0, #ns.CURSOR_SIZES do

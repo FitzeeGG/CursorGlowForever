@@ -64,6 +64,10 @@ local LEAVE_GRACE = .05
 local OUTLINE_RINGS = {{radius = 1.25, alpha = .26}, {radius = 2.5, alpha = .26}}
 local OUTLINE_COPIES = 12
 local SOFT_DIAMETER, SOFT_ALPHA = 64, .95
+-- glow textures by the "Glow size" setting: the same glove-shaped middle with
+-- a shorter or longer falloff (tools/glowTextures.py)
+local GLOW_TEXTURES = {[.5] = "point-glow-50", [.75] = "point-glow-75", [1] = "point-glow", [1.25] = "point-glow-125",
+	[1.5] = "point-glow-150", [1.75] = "point-glow-175", [2] = "point-glow-200"}
 
 ns.defaults = {
 	enabled = true,
@@ -71,6 +75,7 @@ ns.defaults = {
 	useClassColor = true,
 	color = {1, .6, 0},
 	glowOpacity = .35,
+	glowSize = 1, -- how far the soft glow reaches, a GLOW_TEXTURES key
 	outlineOpacity = .75,
 	cursorSize = -1, -- -1 = game setting, otherwise an index of CURSOR_SIZES
 	hideOnHover = true,
@@ -111,7 +116,6 @@ cursor.halo:SetTexture(TEXTURES.."soft")
 cursor.halo:SetPoint("CENTER", cursor, "CENTER")
 cursor.halo:SetAlpha(0)
 cursor.glow = cursor:CreateTexture(nil, "BACKGROUND")
-cursor.glow:SetTexture(TEXTURES.."point-glow")
 cursor.outline = cursor:CreateTexture(nil, "BORDER")
 cursor.outline:SetTexture(TEXTURES.."point-outline")
 -- stands in for the game cursor while it is hidden (turning the camera)
@@ -206,6 +210,16 @@ function ns.getColor()
 end
 
 
+function ns.getGlowSize()
+	return GLOW_TEXTURES[ns.db.glowSize] and ns.db.glowSize or 1
+end
+
+
+function ns.getGlowTexture()
+	return TEXTURES..GLOW_TEXTURES[ns.getGlowSize()]
+end
+
+
 -- the drawn glove: a tinge of the glow colour, or of the glove's own colour
 function ns.getGloveColor()
 	local db = ns.db
@@ -280,6 +294,7 @@ function ns.updateLayout()
 	-- the outline texture covers twice the cursor; the glow reaches further and
 	-- covers four times it, so it fades out before its edges
 	cursor.outline:SetSize(size * 2, size * 2)
+	cursor.glow:SetTexture(ns.getGlowTexture())
 	cursor.glow:SetSize(size * 4, size * 4)
 	ns.updateHalo(cursor.haloDiameter or 3, cursor.haloAlpha or 0)
 	for _, texture in ipairs({cursor.glow, cursor.outline}) do
@@ -287,7 +302,9 @@ function ns.updateLayout()
 		texture:SetPoint("CENTER", cursor, "CENTER")
 	end
 
-	cursor.hover.soft:SetSize(SOFT_DIAMETER * unit, SOFT_DIAMETER * unit)
+	-- the soft circle behind hover outlines follows the glow size, less strongly
+	local softDiameter = SOFT_DIAMETER * unit * (1 + ns.getGlowSize()) / 2
+	cursor.hover.soft:SetSize(softDiameter, softDiameter)
 	cursor.hover.soft:SetPoint("CENTER", cursor, "CENTER")
 	for _, texture in ipairs(cursor.hover.copies) do
 		texture:SetSize(size, size)
