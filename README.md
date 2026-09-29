@@ -13,7 +13,7 @@ In busy fights, crowded towns and dark dungeons, the small glove cursor is easy 
 ### A glow that fits your cursor
 - A soft glow and a crisp outline shaped to the glove cursor itself, not a generic circle.
 - Your **class colour** by default, so it changes with each character, or any **custom colour** you like.
-- Adjustable glow and outline strength.
+- Adjustable glow and outline strength, and a glow size from tight to wide.
 
 ### Hover cursors outlined too
 When the cursor changes as you hover something, the outline follows it:
@@ -47,7 +47,7 @@ Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > 
 | Appearance | Behaviour |
 |---|---|
 | Class colour or custom colour | Show always, in combat or out of combat |
-| Glow opacity | Hide the glow on hover targets |
+| Glow opacity and glow size | Hide the glow on hover targets |
 | Outline opacity | Outline hover cursors, and vendors and services |
 | Cursor size (follows the game setting) | Dim outlines out of range, and how faint |
 | Movement prediction | Draw the glove while turning the camera |
