@@ -626,12 +626,20 @@ local function cursorChangedNear(time)
 end
 
 
--- the game's interaction distance check for the mouseover unit; true when it
--- can't be told, so a change is then read as coming into range
-local function isWithinInteractDistance()
-	if not (UnitExists("mouseover") and CheckInteractDistance) then return true end
-	local ok, within = pcall(function() return CheckInteractDistance("mouseover", 3) and true or false end)
-	return not ok or within
+-- The game's distance checks for the mouseover unit: 3 is duel range (about
+-- 10 yards), 4 follow range (about 28). NPCs can be interacted with further
+-- than duel range, so only beyond follow range is the target "too far" for its
+-- cursor. True when it can't be told, so a change is then read as a range swap.
+local function checkDistance(index)
+	if not (UnitExists("mouseover") and CheckInteractDistance) then return nil end
+	local ok, within = pcall(function() return CheckInteractDistance("mouseover", index) and true or false end)
+	if ok then return within end
+end
+
+
+local function isNearEnoughForCursor()
+	local within = checkDistance(4)
+	return within == nil or within
 end
 
 
@@ -822,12 +830,14 @@ driver:SetScript("OnUpdate", function()
 			-- target: far away it shows the base cursor, closer its greyed
 			-- "unable" cursor, in range the normal one.
 			state.pendingChange = nil
+			debug("cursor change on the same target | within duel range:", tostring(checkDistance(3)),
+				"| within follow range:", tostring(checkDistance(4)))
 			if not state.cursorChanged then
 				-- walked close enough for the target's cursor to appear
 				state.cursorChanged, state.lookSettled, state.hoverCheckTime = true, true, 0
 				if ns.hoverInRange ~= nil then ns.hoverInRange = false end
 				debug("hover look on (came into view range)")
-			elseif ns.hoverInRange == false and not isWithinInteractDistance() then
+			elseif ns.hoverInRange == false and not isNearEnoughForCursor() then
 				-- from the greyed cursor further away: back to the base cursor
 				state.cursorChanged, state.lookSettled = false, true
 				debug("hover look off (too far away)")
