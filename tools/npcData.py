@@ -5,7 +5,9 @@ QuestGivers.lua lists the NPCs that offer a service with its own cursor
 tabard designer) and also start or end quests.
 
 NPCServices.lua gives, for each service NPC, the cursor the game shows for it,
-since titles can't tell (a "Bowyer" who also repairs shows the repair anvil).
+since titles can't tell (a "Bowyer" who also repairs shows the repair anvil),
+and the class each class trainer teaches: other classes don't get the trainer
+cursor from them.
 
     git clone --depth 1 https://github.com/Questie/QuestieDB.git
     pip install lupa
@@ -52,6 +54,19 @@ SERVICES_HEADER = """-- Cursor Glow Forever: the cursor the game shows for each 
 ns.NPC_SERVICES = {{
 """
 
+TRAINER_CLASSES_HEADER = """
+-- Class trainers (a pet trainer teaches hunters): only their class gets the
+-- trainer cursor. Others get the NPC's other service cursor, if any (some
+-- also sell), else none. {{class, cursor for other classes}}
+ns.TRAINER_CLASSES = {{
+"""
+TITLE_CLASSES = {
+	"Warrior Trainer": "WARRIOR", "Paladin Trainer": "PALADIN", "Hunter Trainer": "HUNTER",
+	"Rogue Trainer": "ROGUE", "Priest Trainer": "PRIEST", "Shaman Trainer": "SHAMAN",
+	"Mage Trainer": "MAGE", "Warlock Trainer": "WARLOCK", "Druid Trainer": "DRUID",
+	"Pet Trainer": "HUNTER", "Portal Trainer": "MAGE",
+}
+
 
 def service_cursor(flags):
 	"""The cursor for an NPC's service flags, the more specific service first
@@ -85,12 +100,17 @@ def label(npc):
 	return npc[NAME] + (" <%s>" % npc[SUB_NAME] if npc[SUB_NAME] else "")
 
 
-def write(path, header, revision, rows):
+def write(path, header, revision, rows, more=()):
 	with open(os.path.join(ADDON, path), "w", encoding="utf-8", newline="\n") as f:
 		f.write(header.format(revision=revision))
 		for npc_id, value, text in sorted(rows):
 			f.write("\t[%d] = %s, -- %s\n" % (npc_id, value, text))
 		f.write("}\n")
+		for more_header, more_rows in more:
+			f.write(more_header.format())
+			for npc_id, value, text in sorted(more_rows):
+				f.write("\t[%d] = %s, -- %s\n" % (npc_id, value, text))
+			f.write("}\n")
 	print("wrote", len(rows), "NPCs to", path)
 
 
@@ -99,7 +119,7 @@ def main():
 	revision = subprocess.run(["git", "-C", questie_db, "log", "-1", "--format=%h"],
 		capture_output=True, text=True, check=True).stdout.strip()
 
-	quest_givers, services = [], []
+	quest_givers, services, trainers = [], [], []
 	for npc_id, npc in load_npcs(questie_db).items():
 		flags = npc[NPC_FLAGS] or 0
 		if not flags & SERVICE_FLAGS:
@@ -109,9 +129,13 @@ def main():
 		cursor = service_cursor(flags)
 		if cursor:
 			services.append((int(npc_id), '"%s"' % cursor, label(npc)))
+		trainer_class = TITLE_CLASSES.get(npc[SUB_NAME])
+		if trainer_class and flags & TRAINER:
+			other = service_cursor(flags & ~TRAINER)
+			trainers.append((int(npc_id), '{"%s"%s}' % (trainer_class, ', "%s"' % other if other else ""), label(npc)))
 
 	write("QuestGivers.lua", QUEST_GIVERS_HEADER, revision, quest_givers)
-	write("NPCServices.lua", SERVICES_HEADER, revision, services)
+	write("NPCServices.lua", SERVICES_HEADER, revision, services, [(TRAINER_CLASSES_HEADER, trainers)])
 
 
 if __name__ == "__main__":

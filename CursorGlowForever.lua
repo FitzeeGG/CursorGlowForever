@@ -327,6 +327,14 @@ local NPC_TITLES = {
 	{"Tabard", "Buy"},
 	{"Bank", "Buy"}, -- Banker, Guild Banker: bankers show the bag too
 }
+-- class trainers (titles, for NPCs not in NPC_SERVICES): only their class gets
+-- the trainer cursor, others the speech bubble
+local TRAINER_TITLE_CLASSES = {
+	["Warrior Trainer"] = "WARRIOR", ["Paladin Trainer"] = "PALADIN", ["Hunter Trainer"] = "HUNTER",
+	["Rogue Trainer"] = "ROGUE", ["Priest Trainer"] = "PRIEST", ["Shaman Trainer"] = "SHAMAN",
+	["Mage Trainer"] = "MAGE", ["Warlock Trainer"] = "WARLOCK", ["Druid Trainer"] = "DRUID",
+	["Pet Trainer"] = "HUNTER", ["Portal Trainer"] = "MAGE",
+}
 -- world objects recognised by name (tooltip first line)
 local OBJECT_NAMES = {
 	{"Mailbox", "Mail"},
@@ -488,6 +496,18 @@ local function findGathering(first)
 end
 
 
+-- A class trainer (a pet trainer: hunters) shows the trainer cursor only to
+-- its class. Returns whether this NPC is one for another class, and the cursor
+-- it shows other classes instead, if any.
+local function isOtherClassTrainer(npcID, tooltipShown)
+	local playerClass = select(2, UnitClass("player"))
+	local trainer = npcID and ns.TRAINER_CLASSES and ns.TRAINER_CLASSES[npcID]
+	if trainer then return trainer[1] ~= playerClass, trainer[2] end
+	local class = tooltipShown and TRAINER_TITLE_CLASSES[getLineText(2) or ""]
+	return class and class ~= playerClass or false
+end
+
+
 local function getHoverCursor()
 	local tooltipShown = GameTooltip:IsShown()
 	if UnitExists("mouseover") then
@@ -503,6 +523,8 @@ local function getHoverCursor()
 		if not UnitPlayerControlled("mouseover") and not isKnownQuestGiver("mouseover") then
 			-- the NPC's services from the built-in data, else its title
 			local npcID = tonumber(getNPCID("mouseover") or "")
+			local otherClass, otherCursor = isOtherClassTrainer(npcID, tooltipShown)
+			if otherClass then return otherCursor end
 			local service = npcID and ns.NPC_SERVICES and ns.NPC_SERVICES[npcID]
 			if service then return service end
 			return tooltipShown and findText(2, 2, NPC_TITLES) or nil
