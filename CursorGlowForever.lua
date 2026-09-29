@@ -213,12 +213,14 @@ function ns.updateOpacity(effect)
 	effect = effect or cursor.effectAlpha or 1
 	cursor.effectAlpha = effect
 	local intensity = (cursor.mode == "turning" and db.turningIntensity or 1) * effect
-	cursor.glow:SetAlpha(math.min(db.glowOpacity * intensity, 1))
+	-- the idle pulse fades the glow, not the outline
+	local idle = cursor.idleAlpha or 1
+	cursor.glow:SetAlpha(math.min(db.glowOpacity * intensity, 1) * idle)
 	cursor.outline:SetAlpha(math.min(db.outlineOpacity * intensity, 1))
 	-- the hover outline follows the same opacity settings, and is weaker while
 	-- the target is out of interaction range
 	local range = db.dimOutOfRange and ns.hoverInRange == false and db.outOfRangeStrength or 1
-	cursor.hover.soft:SetAlpha(math.min(SOFT_ALPHA * db.glowOpacity / .35 * effect, 1) * range)
+	cursor.hover.soft:SetAlpha(math.min(SOFT_ALPHA * db.glowOpacity / .35 * effect, 1) * range * idle)
 	for _, texture in ipairs(cursor.hover.copies) do
 		texture:SetAlpha(math.min(texture.ring.alpha * db.outlineOpacity / .75 * effect, 1) * range)
 	end
@@ -251,7 +253,7 @@ function ns.updateHalo(diameter, alpha)
 	if not cursor.size then return end
 	cursor.haloDiameter, cursor.haloAlpha = diameter, alpha
 	cursor.halo:SetSize(cursor.size * diameter, cursor.size * diameter)
-	cursor.halo:SetAlpha(alpha)
+	cursor.halo:SetAlpha(alpha * (cursor.idleAlpha or 1))
 end
 
 
@@ -803,8 +805,8 @@ local FIND_HALO_FROM, FIND_HALO_TO, FIND_HALO_ALPHA = 4, 10, 1 -- halo diameter 
 local PULSE_PERIOD, PULSE_BRIGHTNESS, PULSE_HALO, PULSE_HALO_ALPHA = 1.2, .6, 5, .55
 local PULSE_TINT = .7 -- how far the glow moves to the pulse colour at the peak
 -- Idle pulse: after IDLE_DELAY seconds without the mouse moving, the whole
--- glow slowly fades out and back in, once every IDLE_PERIOD seconds, until the
--- mouse moves.
+-- glow (not the outline) slowly fades out and back in, once every IDLE_PERIOD
+-- seconds, until the mouse moves.
 local IDLE_DELAY, IDLE_PERIOD = 3, 6
 local shake = {direction = 0, swing = 0, count = 0, lastReversal = -10, lastX = nil, findTime = -10}
 
@@ -876,7 +878,8 @@ function ns.updateIdlePulse(idle)
 	end
 	if alpha ~= cursor.idleAlpha then
 		cursor.idleAlpha = alpha
-		cursor:SetAlpha(alpha)
+		ns.updateOpacity()
+		ns.updateHalo(cursor.haloDiameter or 3, cursor.haloAlpha or 0)
 	end
 end
 

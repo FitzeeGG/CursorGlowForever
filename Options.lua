@@ -259,7 +259,7 @@ local function build()
 	intensity:SetPoint("TOPLEFT", tint, "BOTTOMLEFT", 0, -34)
 
 	local idlePulse = createCheckbox("idlePulse", "Pulse when idle",
-		"After a few seconds without moving the mouse, the glow slowly fades out and back in until you move it again.")
+		"After a few seconds without moving the mouse, the glow slowly fades out and back in (the outline stays) until you move it again.")
 	idlePulse:SetPoint("TOPLEFT", intensity, "BOTTOMLEFT", -4, -20)
 
 	local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
