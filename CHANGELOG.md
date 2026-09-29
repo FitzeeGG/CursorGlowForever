@@ -3,6 +3,7 @@
 ## 1.0.2
 
 - Fixed: faint square lines at the edges of the glow. The glow texture now fades out completely before its edges.
+- Fixed: hovering a target from too far away and then walking into range kept the normal glow instead of the hover outline. The outline now appears when the target's cursor does as you approach, and goes away again if you walk too far.
 
 ## 1.0.1
 

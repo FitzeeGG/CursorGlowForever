@@ -629,6 +629,15 @@ local function cursorChangedNear(time)
 end
 
 
+-- the game's interaction distance check for the mouseover unit; true when it
+-- can't be told, so a change is then read as coming into range
+local function isWithinInteractDistance()
+	if not (UnitExists("mouseover") and CheckInteractDistance) then return true end
+	local ok, within = pcall(function() return CheckInteractDistance("mouseover", 3) and true or false end)
+	return not ok or within
+end
+
+
 -- true while the game cursor is hidden for turning the camera. With a camera
 -- button held, only the press rule counts: the mouselook state is already set
 -- on the press, while the game still shows its cursor until the mouse moves
@@ -801,13 +810,25 @@ driver:SetScript("OnUpdate", function()
 			state.cursorChanged, state.lookSettled, state.hoverCheckTime = not state.cursorChanged, true, 0
 			debug("hover look", state.cursorChanged and "on" or "off", "(same target)")
 		elseif now - change.time > UI_HANDOVER then
+			-- With the mouse still, the change comes from the distance to the
+			-- target: far away it shows the base cursor, closer its greyed
+			-- "unable" cursor, in range the normal one.
 			state.pendingChange = nil
-			if ns.hoverInRange ~= nil then
+			if not state.cursorChanged then
+				-- walked close enough for the target's cursor to appear
+				state.cursorChanged, state.lookSettled, state.hoverCheckTime = true, true, 0
+				if ns.hoverInRange ~= nil then ns.hoverInRange = false end
+				debug("hover look on (came into view range)")
+			elseif ns.hoverInRange == false and not isWithinInteractDistance() then
+				-- from the greyed cursor further away: back to the base cursor
+				state.cursorChanged, state.lookSettled = false, true
+				debug("hover look off (too far away)")
+			elseif ns.hoverInRange ~= nil then
 				ns.hoverInRange = not ns.hoverInRange
 				debug("interaction range", ns.hoverInRange and "in" or "out")
-				ns.refreshHoverArt()
-				ns.updateOpacity()
 			end
+			ns.refreshHoverArt()
+			ns.updateOpacity()
 		end
 	end
 
