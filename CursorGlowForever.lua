@@ -94,6 +94,11 @@ ns.defaults = {
 	pulseUseGlowColor = true,
 	pulseColor = {1, .1, .05},
 	idlePulse = false,
+	castRing = false,
+	gcdRing = false,
+	ringUseGlowColor = true,
+	ringColor = {1, 1, 1},
+	clickRipple = false,
 	prediction = 1,
 }
 ns.CURSOR_SIZES = CURSOR_SIZES
@@ -317,6 +322,7 @@ function ns.updateLayout()
 	ns.updateColor()
 	ns.refreshHoverArt(true)
 	ns.updateOpacity()
+	if ns.updateRings then ns.updateRings() end
 end
 
 
@@ -820,6 +826,13 @@ local function isInCombat()
 end
 
 
+-- whether the "Show the glow" setting (always, in or out of combat) shows it now
+function ns.isShowModeActive()
+	local showWhen = ns.db.showWhen
+	return showWhen == "always" or isInCombat() == (showWhen == "combat")
+end
+
+
 -- EFFECTS
 -- Shake to find: quick side to side swings of the mouse (the shakeCount
 -- setting's direction changes in a row, each after a swing over a few percent
@@ -1067,9 +1080,7 @@ driver:SetScript("OnUpdate", function()
 	setMode(mode)
 	local finding = ns.updateEffects(x)
 	-- combat-only and out-of-combat-only: the glow still shows for shake to find
-	if db.showWhen ~= "always" and isInCombat() ~= (db.showWhen == "combat") and not finding then
-		show = false
-	end
+	if not ns.isShowModeActive() and not finding then show = false end
 	cursor:SetShown(show)
 	if hidden then state.lastHiddenTime = now end
 	ns.updateIdlePulse(now - math.max(state.lastMoveTime, state.lastHiddenTime))
@@ -1107,14 +1118,20 @@ function events:ADDON_LOADED(name)
 	CursorGlowForeverCharDB = CursorGlowForeverCharDB or {}
 	CursorGlowForeverCharDB.questGivers = CursorGlowForeverCharDB.questGivers or {}
 	ns.charDB = CursorGlowForeverCharDB
+	ns.migrateProfiles()
 	state.lastX, state.lastY = GetCursorPosition()
 	ns.useProfile()
 end
 
 
 -- PROFILES
--- Settings are account-wide (CursorGlowForeverDB) unless a character uses its
--- own (CursorGlowForeverCharDB.settings), started as a copy of the account's.
+-- Settings live in named profiles shared by the account
+-- (CursorGlowForeverDB.profiles); each character uses one
+-- (CursorGlowForeverCharDB.profile), Default unless it picks another.
+local DEFAULT_PROFILE = "Default"
+ns.DEFAULT_PROFILE = DEFAULT_PROFILE
+
+
 local function fillDefaults(settings)
 	for key, value in pairs(ns.defaults) do
 		if settings[key] == nil then
@@ -1125,33 +1142,122 @@ local function fillDefaults(settings)
 end
 
 
-local function copySettings(from)
-	local copy = {}
+-- copies the settings from one profile into another (a new one without to)
+local function copySettings(from, to)
+	to = to or {}
 	for key in pairs(ns.defaults) do
 		local value = from[key]
-		copy[key] = type(value) == "table" and CopyTable(value) or value
+		to[key] = type(value) == "table" and CopyTable(value) or value
 	end
-	return copy
+	return to
+end
+
+
+local function getProfiles()
+	return CursorGlowForeverDB.profiles
+end
+
+
+-- a name not taken yet: the name, else the name with a number
+local function uniqueName(name)
+	local profiles, candidate, number = getProfiles(), name, 1
+	while profiles[candidate] do
+		number = number + 1
+		candidate = name.." "..number
+	end
+	return candidate
+end
+
+
+function ns.getCharacterName()
+	local name = UnitName("player")
+	local realm = GetRealmName and GetRealmName()
+	if name and realm and realm ~= "" then return name.." - "..realm end
+	return name or "Character"
+end
+
+
+-- Up to 1.0.2 the account-wide settings sat in CursorGlowForeverDB itself and
+-- a character could have its own (CursorGlowForeverCharDB.settings): they
+-- become the Default profile and a profile named after the character.
+function ns.migrateProfiles()
+	local db, charDB = CursorGlowForeverDB, ns.charDB
+	if not db.profiles then
+		local default = {}
+		for key in pairs(ns.defaults) do
+			default[key], db[key] = db[key], nil
+		end
+		db.profiles = {[DEFAULT_PROFILE] = default}
+	end
+	db.profiles[DEFAULT_PROFILE] = db.profiles[DEFAULT_PROFILE] or {}
+	if charDB.settings then
+		if charDB.useCharacterSettings then
+			local name = uniqueName(ns.getCharacterName())
+			db.profiles[name], charDB.profile = charDB.settings, name
+		end
+		charDB.settings, charDB.useCharacterSettings = nil, nil
+	end
+end
+
+
+-- this character's profile (Default if it was deleted)
+function ns.getProfileName()
+	local name = ns.charDB.profile
+	if name and getProfiles()[name] then return name end
+	return DEFAULT_PROFILE
+end
+
+
+-- profile names, Default first, then alphabetically
+function ns.getProfileNames()
+	local names = {}
+	for name in pairs(getProfiles()) do
+		if name ~= DEFAULT_PROFILE then table.insert(names, name) end
+	end
+	table.sort(names, function(a, b) return a:lower() < b:lower() end)
+	table.insert(names, 1, DEFAULT_PROFILE)
+	return names
 end
 
 
 function ns.useProfile()
-	local charDB = ns.charDB
-	if charDB.useCharacterSettings then
-		charDB.settings = charDB.settings or copySettings(fillDefaults(CursorGlowForeverDB))
-		ns.db = fillDefaults(charDB.settings)
-	else
-		ns.db = fillDefaults(CursorGlowForeverDB)
-	end
+	ns.db = fillDefaults(getProfiles()[ns.getProfileName()])
 	ns.setEnabled(ns.db.enabled)
 	if cursor.size then ns.updateLayout() end
 end
 
 
--- perCharacter: this character's own settings (a copy of the account's the
--- first time), or the account-wide ones; the other set is kept
-function ns.setCharacterSettings(perCharacter)
-	ns.charDB.useCharacterSettings = perCharacter and true or false
+function ns.setProfile(name)
+	if not getProfiles()[name] then return end
+	ns.charDB.profile = name ~= DEFAULT_PROFILE and name or nil
+	ns.useProfile()
+end
+
+
+-- a new profile from a copy of the current settings, used from now on;
+-- false if the name is empty or taken
+function ns.newProfile(name)
+	name = (name or ""):match("^%s*(.-)%s*$")
+	if name == "" or getProfiles()[name] then return false end
+	getProfiles()[name] = copySettings(ns.db)
+	ns.setProfile(name)
+	return true
+end
+
+
+-- copies another profile's settings into the current one
+function ns.copyProfile(from)
+	local source = getProfiles()[from]
+	if not source or from == ns.getProfileName() then return end
+	copySettings(fillDefaults(source), ns.db)
+	ns.useProfile()
+end
+
+
+-- characters using a deleted profile go back to Default
+function ns.deleteProfile(name)
+	if name == DEFAULT_PROFILE or not getProfiles()[name] then return end
+	getProfiles()[name] = nil
 	ns.useProfile()
 end
 

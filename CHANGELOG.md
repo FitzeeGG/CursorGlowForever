@@ -1,5 +1,14 @@
 # Cursor Glow Forever
 
+## 1.0.3
+
+- New "Cast ring" (off by default): a ring around the cursor fills up while you cast and drains while you channel.
+- New "Global cooldown ring" (off by default): a second, smaller ring fills up over the global cooldown.
+- The rings use the glow colour, or a ring colour of their own, and run through a demo cast in the settings preview.
+- New "Click ripple" (off by default): a ring spreads out and fades where you click.
+- Profiles: settings now live in named profiles that all your characters share, and each character remembers which one it uses. Create a profile from a copy of the current settings, switch between them, copy settings from another profile, or delete one. Your current settings become the Default profile, and a character that had its own settings gets a profile named after it.
+- The settings page is split into two tabs, Cursor and Effects, under the live preview.
+
 ## 1.0.2
 
 - The settings page is now translated into German, French, Spanish, Portuguese, Italian, Russian, Korean and Chinese (Simplified and Traditional), using the game's own words where it has them. The translations aren't by native speakers yet, so corrections are very welcome.

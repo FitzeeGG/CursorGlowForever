@@ -1,5 +1,6 @@
 """Generates the glow textures (textures/point-glow*.tga) around the classic
-Interface/Cursor/Point glove, one per "Glow size" setting.
+Interface/Cursor/Point glove, one per "Glow size" setting, and the ring used
+by the cast and global cooldown rings and the click ripple (textures/ring.tga).
 
 The glow's falloff by distance from the glove's edge was measured from
 CursorMod's midnight glow. Wider or tighter glows stretch that falloff; the
@@ -27,6 +28,21 @@ SIZES = {.5: "point-glow-50", .75: "point-glow-75", 1: "point-glow", 1.25: "poin
 	1.5: "point-glow-150", 1.75: "point-glow-175", 2: "point-glow-200"}
 
 
+def ring():
+	"""A thin anti-aliased ring touching the texture's edge, with a faint glow inside."""
+	size = 128
+	y, x = np.mgrid[0:size, 0:size] + .5
+	radius = np.hypot(x - size / 2, y - size / 2)
+	outer, width, glow = 62, 7, 10
+	band = np.clip(outer - radius + .5, 0, 1) * np.clip(radius - (outer - width) + .5, 0, 1)
+	inner_glow = np.clip(1 - (outer - width - radius) / glow, 0, 1) ** 2 * .35 * (radius < outer - width)
+	img = np.zeros((size, size, 4), np.uint8)
+	img[..., :3] = 255
+	img[..., 3] = np.round(np.maximum(band, inner_glow) * 255)
+	Image.fromarray(img, "RGBA").save(os.path.join(TEXTURES, "ring.tga"))
+	print("wrote ring")
+
+
 def main():
 	# 256 px covering 128 cursor units (2 px per unit), the cursor box in the centre
 	point = Image.open(sys.argv[1]).convert("RGBA")
@@ -44,6 +60,7 @@ def main():
 		assert border.max() == 0, name + " reaches the texture's edge"
 		Image.fromarray(img, "RGBA").save(os.path.join(TEXTURES, name + ".tga"))
 		print("wrote", name)
+	ring()
 
 
 if __name__ == "__main__":

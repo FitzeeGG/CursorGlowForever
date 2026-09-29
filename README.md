@@ -32,21 +32,33 @@ Hold a mouse button to turn the camera and the game hides your cursor. Cursor Gl
 - **Pulse when idle:** the glow breathes slowly while the mouse is still. The outline stays steady.
 - **Show the glow** always, only in combat or only out of combat. Shake to find still works either way.
 
+### Rings and clicks
+- **Cast ring:** a ring around the cursor fills up while you cast and drains while you channel, so you can watch your cast without looking away.
+- **Global cooldown ring:** a second, smaller ring fills up over the global cooldown.
+- **Click ripple:** a ring spreads out and fades wherever you click.
+
+All three are off by default, and the rings can use the glow colour or their own.
+
 ### Keeps up with you
 The glow is placed where your cursor is heading, so it stays on the cursor during fast movement. It also copes cleanly with alt-tabbing and loading screens.
 
 ## Settings
 
-Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > Cursor Glow Forever**. A live preview at the top shows your cursor, and the glove drawn while turning the camera, as you change things.
+Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > Cursor Glow Forever**. A live preview at the top shows your cursor, and the glove drawn while turning the camera, as you change things, including the rings running through a demo cast.
 
-- **General:** enable, and settings for this character only (account-wide by default)
+**Cursor tab**
+- **Profiles:** named profiles shared by all your characters; each character remembers which one it uses. Create one from a copy of the current settings, switch, copy from another, or delete.
 - **Colour:** class colour or a custom colour
 - **Glow and outline:** glow opacity, glow size, outline opacity, cursor size (follows the game setting), movement prediction
-- **Effects:** shake to find and how many shakes it takes, pulse in combat and its colour (off by default), pulse when idle (off by default)
 - **Visibility:** show the glow always, in combat or out of combat, and hide it over hover targets
 - **Hover outlines:** outline hover cursors, outline vendors and services (off by default), dim outlines out of range and how faint
 - **Turning the camera:** draw the glove, its colour and tint, and how much stronger the glow is
-- **Reset to defaults**
+- **Reset to defaults** (for the current profile)
+
+**Effects tab**
+- **Finding the cursor:** shake to find and how many shakes it takes, pulse in combat and its colour (off by default), pulse when idle (off by default)
+- **Rings:** cast ring and global cooldown ring (off by default), and their colour
+- **Click ripple** (off by default)
 
 The settings page is available in English, German, French, Spanish, Portuguese, Italian, Russian, Korean and Chinese. Spotted an awkward translation? Please open an issue, or suggest a fix to `Locales.lua`.
 
