@@ -9,6 +9,11 @@ since titles can't tell (a "Bowyer" who also repairs shows the repair anvil),
 and the class each class trainer teaches: other classes don't get the trainer
 cursor from them.
 
+NPCTitles.lua gives, for the other client languages, the NPC titles that
+tell the service cursor (and the class trainer titles), from the translated
+NPC data: a title counts when every NPC with it shows the same cursor. It is
+the fallback for NPCs new to Forever on non-English clients.
+
     git clone --depth 1 https://github.com/Questie/QuestieDB.git
     pip install lupa
     python tools/npcData.py <path to QuestieDB>
@@ -96,6 +101,67 @@ def load_npcs(questie_db):
 	return lua51.LuaRuntime().execute(source[start:source.rindex("]]")])
 
 
+LOCALES = ["deDE", "esES", "esMX", "frFR", "koKR", "ptBR", "ruRU", "zhCN", "zhTW"]
+
+TITLES_HEADER = """-- Cursor Glow Forever: NPC titles on non-English clients, for NPCs not in
+-- NPC_SERVICES (new to Forever). TITLE_CURSORS: the cursor for a title (every
+-- known NPC with it shows that one); TITLE_TRAINER_CLASSES: the class a class
+-- trainer title teaches. Titles are matched whole. English uses the title
+-- keywords in CursorGlowForever.lua.
+--
+""" + CREDIT + """
+local locale = GetLocale()
+"""
+
+
+def load_localized(questie_db, locale):
+	"""{npc id: translated title} from QuestieDB's Forever translations."""
+	with open(os.path.join(questie_db, "l10n", "Forever", "lookupNpcs", locale + ".lua"), encoding="utf-8") as f:
+		source = f.read()
+	start = source.index("loadstring([[") + len("loadstring([[")
+	names = lua51.LuaRuntime().execute(source[start:source.rindex("]]")])
+	return {int(npc_id): entry[2] for npc_id, entry in names.items() if entry[2]}
+
+
+def title_tables(npcs, localized):
+	"""Titles every NPC agrees on: {title: cursor} and {title: trainer class}."""
+	cursor_votes, class_votes = {}, {}
+	for npc_id, npc in npcs.items():
+		title = localized.get(int(npc_id))
+		if not title:
+			continue
+		flags = npc[NPC_FLAGS] or 0
+		# no service: no cursor of its own; vendor + trainer: can't tell
+		cursor = service_cursor(flags) if flags & SERVICE_FLAGS else "none"
+		cursor_votes.setdefault(title, set()).add(cursor or "unknown")
+		trainer_class = TITLE_CLASSES.get(npc[SUB_NAME])
+		class_votes.setdefault(title, set()).add(trainer_class if trainer_class and flags & TRAINER else "none")
+	cursors = {t: v.pop() for t, v in cursor_votes.items() if len(v) == 1 and next(iter(v)) not in ("none", "unknown")}
+	classes = {t: v.pop() for t, v in class_votes.items() if len(v) == 1 and next(iter(v)) != "none"}
+	return cursors, classes
+
+
+def lua_string(text):
+	return '"%s"' % text.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def write_titles(questie_db, revision, npcs):
+	with open(os.path.join(ADDON, "NPCTitles.lua"), "w", encoding="utf-8", newline="\n") as f:
+		f.write(TITLES_HEADER.format(revision=revision))
+		for i, locale in enumerate(LOCALES):
+			cursors, classes = title_tables(npcs, load_localized(questie_db, locale))
+			f.write('%s locale == "%s" then\n' % ("if" if i == 0 else "elseif", locale))
+			f.write("\tns.TITLE_CURSORS = {\n")
+			for title in sorted(cursors):
+				f.write('\t\t[%s] = "%s",\n' % (lua_string(title), cursors[title]))
+			f.write("\t}\n\tns.TITLE_TRAINER_CLASSES = {\n")
+			for title in sorted(classes):
+				f.write('\t\t[%s] = "%s",\n' % (lua_string(title), classes[title]))
+			f.write("\t}\n")
+			print(locale, len(cursors), "service titles,", len(classes), "class trainer titles")
+		f.write("end\n")
+
+
 def label(npc):
 	return npc[NAME] + (" <%s>" % npc[SUB_NAME] if npc[SUB_NAME] else "")
 
@@ -119,8 +185,9 @@ def main():
 	revision = subprocess.run(["git", "-C", questie_db, "log", "-1", "--format=%h"],
 		capture_output=True, text=True, check=True).stdout.strip()
 
+	npcs = load_npcs(questie_db)
 	quest_givers, services, trainers = [], [], []
-	for npc_id, npc in load_npcs(questie_db).items():
+	for npc_id, npc in npcs.items():
 		flags = npc[NPC_FLAGS] or 0
 		if not flags & SERVICE_FLAGS:
 			continue
@@ -136,6 +203,7 @@ def main():
 
 	write("QuestGivers.lua", QUEST_GIVERS_HEADER, revision, quest_givers)
 	write("NPCServices.lua", SERVICES_HEADER, revision, services, [(TRAINER_CLASSES_HEADER, trainers)])
+	write_titles(questie_db, revision, npcs)
 
 
 if __name__ == "__main__":

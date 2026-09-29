@@ -2,6 +2,7 @@
 
 ## 1.0.2
 
+- Non-English clients: NPCs new to Forever are now recognised by their title in German, French, Spanish, Portuguese, Russian, Korean and Chinese, from the titles in QuestieDB's translated Forever NPC data (a title counts when every known NPC with it shows the same cursor). Class and pet trainer titles are recognised too.
 - New option "Settings for this character only": give a character its own settings, starting from the account-wide ones. Untick it to go back to the account-wide settings; the character's own are kept for next time.
 - New "Glow size" slider (50% to 200%): make the soft glow wider or tighter, whatever the cursor size. The glow still hugs the cursor; the outline stays the same.
 - New: a live preview at the top of the settings shows the cursor and the glove drawn while turning the camera with your colour, glow, outline and glove settings as you change them. The settings now scroll beneath it.

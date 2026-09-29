@@ -323,7 +323,8 @@ end
 -- HOVER CURSOR
 -- The game does not report which cursor it shows, so it is worked out from
 -- what is under the mouse; answers are HOVER_SHEETS keys. Only confident answers count; anything else gets
--- no outline rather than a wrong one. NPC titles are matched in English.
+-- no outline rather than a wrong one. NPC titles are matched by English
+-- keywords, or on other clients whole from NPCTitles.lua.
 local NPC_TITLES = {
 	{"Stable Master", "StableMaster"},
 	{"Flight Master", "Taxi"},
@@ -531,7 +532,8 @@ local function isOtherClassTrainer(npcID, tooltipShown)
 	local playerClass = select(2, UnitClass("player"))
 	local trainer = npcID and ns.TRAINER_CLASSES and ns.TRAINER_CLASSES[npcID]
 	if trainer then return trainer[1] ~= playerClass, trainer[2] end
-	local class = tooltipShown and TRAINER_TITLE_CLASSES[getLineText(2) or ""]
+	local title = tooltipShown and getLineText(2) or ""
+	local class = TRAINER_TITLE_CLASSES[title] or ns.TITLE_TRAINER_CLASSES and ns.TITLE_TRAINER_CLASSES[title]
 	return class and class ~= playerClass or false
 end
 
@@ -555,7 +557,10 @@ local function getHoverCursor()
 			if otherClass then return otherCursor end
 			local service = npcID and ns.NPC_SERVICES and ns.NPC_SERVICES[npcID]
 			if service then return service end
-			return tooltipShown and findText(2, 2, NPC_TITLES) or nil
+			if not tooltipShown then return end
+			-- other languages: whole titles from the translated NPC data (NPCTitles.lua)
+			local title = ns.TITLE_CURSORS and ns.TITLE_CURSORS[getLineText(2) or ""]
+			return title or findText(2, 2, NPC_TITLES)
 		end
 		return
 	end

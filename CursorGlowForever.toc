@@ -10,5 +10,6 @@
 
 QuestGivers.lua
 NPCServices.lua
+NPCTitles.lua
 CursorGlowForever.lua
 Options.lua

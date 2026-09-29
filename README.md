@@ -63,7 +63,7 @@ Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > 
 
 ## Good to know
 
-- The game doesn't tell addons which cursor it's showing, so the addon works it out from what's under your mouse. NPC titles (Vendor, Banker, Innkeeper...) are recognised on **English** clients.
+- The game doesn't tell addons which cursor it's showing, so the addon works it out from what's under your mouse. Known NPCs are recognised by their ID in any language. NPCs new to Forever are recognised by their title (Vendor, Banker, Innkeeper...): on English clients by keywords, and on German, French, Spanish, Portuguese, Russian, Korean and Chinese clients by the titles in the game's translated NPC data.
 - Objects such as mailboxes and ore aren't dimmed out of range, because the game gives no way to tell whether you start in range.
 - An NPC offering a quest shows the quest cursor instead of its service one, and the game doesn't tell addons which NPCs have quests. Cursor Glow Forever ships a list of the vendors, trainers, innkeepers and other service NPCs that give quests, and learns from talking to them whether they still have quests for you. NPCs new to Forever aren't in the list yet, so the first time you hover one of those that gives quests it may still show its service outline.
 
