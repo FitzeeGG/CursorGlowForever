@@ -196,6 +196,14 @@ local function build()
 		"Places the glow ahead of the cursor by this many frames of its movement, so it keeps up during fast movement. Lower it if the glow overshoots when you stop.")
 	prediction:SetPoint("TOPLEFT", size, "BOTTOMLEFT", 0, -34)
 
+	local shakeToFind = createCheckbox("shakeToFind", "Shake to find",
+		"Shake the mouse quickly side to side to flash a bright halo around the cursor, so you can find it.")
+	shakeToFind:SetPoint("TOPLEFT", prediction, "BOTTOMLEFT", -4, -20)
+
+	local combatPulse = createCheckbox("combatPulse", "Pulse in combat",
+		"While you're in combat, the glow gently pulses brighter, with a soft halo.")
+	combatPulse:SetPoint("TOPLEFT", shakeToFind, "BOTTOMLEFT", 0, -4)
+
 	-- BEHAVIOUR (right column)
 	local hover = createCheckbox("hideOnHover", "Hide on hover targets",
 		"Hide the glove glow while the cursor has a hover look (mailbox, enemy, NPC...).")
@@ -238,7 +246,7 @@ local function build()
 	local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	reset:SetSize(140, 22)
 	reset:SetText("Reset to defaults")
-	reset:SetPoint("TOPLEFT", prediction, "BOTTOMLEFT", -4, -30)
+	reset:SetPoint("TOPLEFT", combatPulse, "BOTTOMLEFT", 0, -16)
 	reset:SetScript("OnClick", function()
 		for key, value in pairs(ns.defaults) do
 			ns.db[key] = type(value) == "table" and CopyTable(value) or value

@@ -82,6 +82,8 @@ ns.defaults = {
 	gloveUseGlowColor = true,
 	gloveColor = {1, 1, 1},
 	turningIntensity = 1.4,
+	shakeToFind = true,
+	combatPulse = true,
 	prediction = 1,
 }
 ns.CURSOR_SIZES = CURSOR_SIZES
@@ -97,6 +99,12 @@ cursor:SetFrameLevel(10000)
 cursor:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT")
 cursor:Hide()
 
+-- soft round halo for shake to find and the combat pulse (no hole, unlike the
+-- shaped glow, so it can grow)
+cursor.halo = cursor:CreateTexture(nil, "BACKGROUND", nil, -1)
+cursor.halo:SetTexture(TEXTURES.."soft")
+cursor.halo:SetPoint("CENTER", cursor, "CENTER")
+cursor.halo:SetAlpha(0)
 cursor.glow = cursor:CreateTexture(nil, "BACKGROUND")
 cursor.glow:SetTexture(TEXTURES.."point-glow")
 cursor.outline = cursor:CreateTexture(nil, "BORDER")
@@ -193,19 +201,31 @@ end
 
 
 -- the glow around the drawn glove is a little stronger
-function ns.updateOpacity()
+-- effect: brightness multiplier from shake to find and the combat pulse
+function ns.updateOpacity(effect)
 	local db = ns.db
 	if not db then return end
-	local intensity = cursor.mode == "turning" and db.turningIntensity or 1
+	effect = effect or cursor.effectAlpha or 1
+	cursor.effectAlpha = effect
+	local intensity = (cursor.mode == "turning" and db.turningIntensity or 1) * effect
 	cursor.glow:SetAlpha(math.min(db.glowOpacity * intensity, 1))
 	cursor.outline:SetAlpha(math.min(db.outlineOpacity * intensity, 1))
 	-- the hover outline follows the same opacity settings, and is weaker while
 	-- the target is out of interaction range
 	local range = db.dimOutOfRange and ns.hoverInRange == false and db.outOfRangeStrength or 1
-	cursor.hover.soft:SetAlpha(math.min(SOFT_ALPHA * db.glowOpacity / .35, 1) * range)
+	cursor.hover.soft:SetAlpha(math.min(SOFT_ALPHA * db.glowOpacity / .35 * effect, 1) * range)
 	for _, texture in ipairs(cursor.hover.copies) do
-		texture:SetAlpha(math.min(texture.ring.alpha * db.outlineOpacity / .75, 1) * range)
+		texture:SetAlpha(math.min(texture.ring.alpha * db.outlineOpacity / .75 * effect, 1) * range)
 	end
+end
+
+
+-- halo: diameter in cursor sizes and alpha, from shake to find and the combat pulse
+function ns.updateHalo(diameter, alpha)
+	if not cursor.size then return end
+	cursor.haloDiameter, cursor.haloAlpha = diameter, alpha
+	cursor.halo:SetSize(cursor.size * diameter, cursor.size * diameter)
+	cursor.halo:SetAlpha(alpha)
 end
 
 
@@ -222,6 +242,8 @@ function ns.updateLayout()
 	-- covers four times it, so it fades out before its edges
 	cursor.outline:SetSize(size * 2, size * 2)
 	cursor.glow:SetSize(size * 4, size * 4)
+	cursor.halo:SetVertexColor(r, g, b)
+	ns.updateHalo(cursor.haloDiameter or 3, cursor.haloAlpha or 0)
 	for _, texture in ipairs({cursor.glow, cursor.outline}) do
 		texture:ClearAllPoints()
 		texture:SetPoint("CENTER", cursor, "CENTER")
@@ -516,6 +538,7 @@ local state = {
 local function debug(...)
 	if ns.debug then print(("|cff66ccffCursor Glow Forever|r %.3f"):format(GetTime()), ...) end
 end
+ns.debugPrint = debug
 
 
 -- fallback when WORLD_CURSOR_TOOLTIP_UPDATE is missing: world objects show a
@@ -715,6 +738,70 @@ local function updateCursorChanged()
 end
 
 
+-- EFFECTS
+-- Shake to find: quick side to side swings of the mouse (direction changes
+-- over a few percent of the screen each, close together) brighten the glow and
+-- send a halo out around the cursor, easing back over a second. Combat pulse:
+-- while in combat the glow and a faint halo slowly pulse brighter. The shaped
+-- glow keeps its size (scaling it would widen its cursor-shaped middle).
+local SHAKE_REVERSALS, SHAKE_WINDOW, SHAKE_SWING = 3, .8, .03 -- swing: fraction of screen height
+local FIND_TIME, FIND_BRIGHTNESS = 1, 1 -- extra brightness at the start
+local FIND_HALO_FROM, FIND_HALO_TO, FIND_HALO_ALPHA = 4, 10, 1 -- halo diameter (cursor sizes) and alpha
+local PULSE_PERIOD, PULSE_BRIGHTNESS, PULSE_HALO, PULSE_HALO_ALPHA = 1.2, .6, 5, .55
+local shake = {direction = 0, swing = 0, reversals = {}, lastX = nil, findTime = -10}
+
+
+local function detectShake(x, now)
+	if shake.lastX == nil then shake.lastX = x return end
+	local dx = x - shake.lastX
+	shake.lastX = x
+	if dx == 0 then return end
+	local direction = dx > 0 and 1 or -1
+	if direction == shake.direction then
+		shake.swing = shake.swing + math.abs(dx)
+		return
+	end
+	-- a direction change after a long enough swing counts
+	local screenHeight = UIParent:GetHeight() * UIParent:GetEffectiveScale()
+	if shake.direction ~= 0 and shake.swing >= screenHeight * SHAKE_SWING then
+		table.insert(shake.reversals, now)
+	end
+	shake.direction, shake.swing = direction, math.abs(dx)
+	while shake.reversals[1] and now - shake.reversals[1] > SHAKE_WINDOW do table.remove(shake.reversals, 1) end
+	if #shake.reversals >= SHAKE_REVERSALS and now - shake.findTime > FIND_TIME then
+		shake.findTime, shake.reversals = now, {}
+		ns.debugPrint("shake to find")
+	end
+end
+
+
+function ns.updateEffects(x)
+	local db = ns.db
+	local now = GetTime()
+	local brightness, haloDiameter, haloAlpha = 1, FIND_HALO_FROM, 0
+	if db.combatPulse and (InCombatLockdown() or UnitAffectingCombat("player")) then
+		local wave = .5 + .5 * math.sin(now * 2 * math.pi / PULSE_PERIOD)
+		brightness = 1 + PULSE_BRIGHTNESS * wave
+		haloDiameter, haloAlpha = PULSE_HALO, PULSE_HALO_ALPHA * wave
+	end
+	if db.shakeToFind then
+		detectShake(x, now)
+		local t = (now - shake.findTime) / FIND_TIME
+		if t < 1 then
+			-- the halo spreads out while it fades
+			local fade = (1 - t) ^ 1.5
+			brightness = brightness + FIND_BRIGHTNESS * fade
+			haloDiameter = FIND_HALO_FROM + (FIND_HALO_TO - FIND_HALO_FROM) * math.sqrt(t)
+			haloAlpha = math.max(haloAlpha, FIND_HALO_ALPHA * fade)
+		end
+	end
+	if haloDiameter ~= cursor.haloDiameter or haloAlpha ~= cursor.haloAlpha then
+		ns.updateHalo(haloDiameter, haloAlpha)
+	end
+	if brightness ~= cursor.effectAlpha then ns.updateOpacity(brightness) end
+end
+
+
 -- EVERY FRAME
 -- Anything drawn in game trails the game cursor by about a frame, so the
 -- cursor frame is placed where the cursor is heading: its position plus its
@@ -868,6 +955,7 @@ driver:SetScript("OnUpdate", function()
 
 	setMode(mode)
 	cursor:SetShown(show)
+	ns.updateEffects(x)
 	if show then
 		local lead = hidden and 0 or db.prediction
 		local scale = UIParent:GetEffectiveScale()
