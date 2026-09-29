@@ -67,6 +67,7 @@ local SOFT_DIAMETER, SOFT_ALPHA = 64, .95
 
 ns.defaults = {
 	enabled = true,
+	showWhen = "always", -- "always", "combat" (in combat only) or "noCombat" (out of combat only)
 	useClassColor = true,
 	color = {1, .6, 0},
 	glowOpacity = .35,
@@ -781,6 +782,11 @@ local function updateCursorChanged()
 end
 
 
+local function isInCombat()
+	return InCombatLockdown() or UnitAffectingCombat("player")
+end
+
+
 -- EFFECTS
 -- Shake to find: quick side to side swings of the mouse (the shakeCount
 -- setting's direction changes in a row, each after a swing over a few percent
@@ -826,8 +832,8 @@ function ns.updateEffects(x)
 	local db = ns.db
 	local now = GetTime()
 	local brightness, haloDiameter, haloAlpha = 1, FIND_HALO_FROM, 0
-	local pulseTint, pulseAlpha = 0, 0
-	if db.combatPulse and (InCombatLockdown() or UnitAffectingCombat("player")) then
+	local pulseTint, pulseAlpha, finding = 0, 0, false
+	if db.combatPulse and isInCombat() then
 		local wave = .5 + .5 * math.sin(now * 2 * math.pi / PULSE_PERIOD)
 		brightness = 1 + PULSE_BRIGHTNESS * wave
 		pulseTint, pulseAlpha = PULSE_TINT * wave, PULSE_HALO_ALPHA * wave
@@ -837,6 +843,7 @@ function ns.updateEffects(x)
 		detectShake(x, now)
 		local t = (now - shake.findTime) / FIND_TIME
 		if t < 1 then
+			finding = true
 			-- the halo spreads out while it fades
 			local fade = (1 - t) ^ 1.5
 			brightness = brightness + FIND_BRIGHTNESS * fade
@@ -852,6 +859,7 @@ function ns.updateEffects(x)
 		ns.updateHalo(haloDiameter, haloAlpha)
 	end
 	if brightness ~= cursor.effectAlpha then ns.updateOpacity(brightness) end
+	return finding
 end
 
 
@@ -1007,8 +1015,12 @@ driver:SetScript("OnUpdate", function()
 	end
 
 	setMode(mode)
+	local finding = ns.updateEffects(x)
+	-- combat-only and out-of-combat-only: the glow still shows for shake to find
+	if db.showWhen ~= "always" and isInCombat() ~= (db.showWhen == "combat") and not finding then
+		show = false
+	end
 	cursor:SetShown(show)
-	ns.updateEffects(x)
 	if show then
 		local lead = hidden and 0 or db.prediction
 		local scale = UIParent:GetEffectiveScale()

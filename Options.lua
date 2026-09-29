@@ -55,10 +55,10 @@ end
 
 
 -- values: list of {value, text} for a slider over fixed choices
-local function createSlider(key, text, minValue, maxValue, step, format, values, tooltip)
+local function createSlider(key, text, minValue, maxValue, step, format, values, tooltip, width)
 	local slider = CreateFrame("Slider", nil, panel)
 	slider:SetOrientation("HORIZONTAL")
-	slider:SetSize(220, 16)
+	slider:SetSize(width or 220, 16)
 	slider:SetHitRectInsets(0, 0, -6, -6)
 	slider:SetObeyStepOnDrag(true)
 	if values then
@@ -215,9 +215,14 @@ local function build()
 	pulseSwatch:SetPoint("LEFT", pulseGlowColor.label, "RIGHT", 24, 0)
 
 	-- BEHAVIOUR (right column)
+	local showWhen = createSlider("showWhen", "Show the glow", nil, nil, nil, nil,
+		{{"always", "Always"}, {"combat", "In combat"}, {"noCombat", "Out of combat"}},
+		"Show the glow always, only in combat, or only out of combat. Shake to find still shows it for a moment.", 160)
+	showWhen:SetPoint("TOPLEFT", enabled, "TOPLEFT", 344, -20)
+
 	local hover = createCheckbox("hideOnHover", "Hide on hover targets",
 		"Hide the glove glow while the cursor has a hover look (mailbox, enemy, NPC...).")
-	hover:SetPoint("TOPLEFT", enabled, "TOPLEFT", 340, 0)
+	hover:SetPoint("TOPLEFT", showWhen, "BOTTOMLEFT", -4, -20)
 
 	local outlineHover = createCheckbox("outlineHover", "Outline hover cursors",
 		"Outline the hover cursor (loot bag, pickaxe, sword...) when it can be told which one is showing. Unrecognised ones get no outline.")

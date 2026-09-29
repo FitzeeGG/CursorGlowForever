@@ -34,6 +34,9 @@ Hold the left or right mouse button and the game hides your cursor. Cursor Glow 
 ### Shake to find, and a pulse in combat
 Lost it anyway? Shake the mouse quickly side to side and a bright halo bursts out around the cursor; you choose how many shakes it takes. Turn on the combat pulse and the glow gently pulses while you fight, so it's easy to keep track of, in your glow colour or a colour of its own (a tinge of red, say, to show you're in combat).
 
+### Only when you want it
+Show the glow all the time, only in combat, or only out of combat.
+
 ### Keeps up with you
 The glow is placed where your cursor is heading, so it stays on the cursor during fast movement. It also copes cleanly with alt-tabbing and loading screens.
 
@@ -43,13 +46,14 @@ Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > 
 
 | Appearance | Behaviour |
 |---|---|
-| Class colour or custom colour | Hide the glow on hover targets |
-| Glow opacity | Outline hover cursors, and vendors and services |
-| Outline opacity | Dim outlines out of range, and how faint |
-| Cursor size (follows the game setting) | Draw the glove while turning the camera |
-| Movement prediction | Glove colour and tint |
-| Shake to find, and shakes needed | Glow intensity while turning |
-| Pulse in combat, and its colour | Reset to defaults |
+| Class colour or custom colour | Show always, in combat or out of combat |
+| Glow opacity | Hide the glow on hover targets |
+| Outline opacity | Outline hover cursors, and vendors and services |
+| Cursor size (follows the game setting) | Dim outlines out of range, and how faint |
+| Movement prediction | Draw the glove while turning the camera |
+| Shake to find, and shakes needed | Glove colour and tint |
+| Pulse in combat, and its colour | Glow intensity while turning |
+| Reset to defaults | |
 
 ## Commands
 
