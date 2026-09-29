@@ -4,6 +4,7 @@
 
 - Fixed: faint square lines at the edges of the glow. The glow texture now fades out completely before its edges.
 - Fixed: hovering a target from too far away and then walking into range kept the normal glow instead of the hover outline. The outline now appears when the target's cursor does as you approach, and goes away again if you walk far away (beyond follow range), without mistaking an NPC's longer interaction range for that.
+- Fixed: walking in or out of range of a target while following it with the mouse flipped the glow (the normal glow showed around the target's cursor). While you or the target are moving, a cursor change on the same target is now read as a range change.
 - Fixed: a Lua taint warning from checking nameplates (some are restricted and can't be measured). Nameplates are no longer measured.
 - Fixed: moving straight from one hover target to another (an innkeeper to a chair, for example) could show the normal glow. NPC titles are recognised for this even with "Outline vendors and services" off, and the addon learns which objects have their own cursor when you hover them from open ground.
 

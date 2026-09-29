@@ -626,6 +626,17 @@ local function cursorChangedNear(time)
 end
 
 
+-- the player or the mouseover unit is moving (unit speeds can be secret)
+local function isDistanceChanging()
+	if not GetUnitSpeed then return false end
+	local ok, moving = pcall(function()
+		if (GetUnitSpeed("player") or 0) > 0 then return true end
+		return UnitExists("mouseover") and (GetUnitSpeed("mouseover") or 0) > 0
+	end)
+	return ok and moving or false
+end
+
+
 -- The game's distance checks for the mouseover unit: 3 is duel range (about
 -- 10 yards), 4 follow range (about 28). NPCs can be interacted with further
 -- than duel range, so only beyond follow range is the target "too far" for its
@@ -713,6 +724,7 @@ driver:SetScript("OnUpdate", function()
 	local x, y = GetCursorPosition()
 	local dx, dy = x - state.lastX, y - state.lastY
 	if dx ~= 0 or dy ~= 0 then state.lastMoveTime = now end
+	if isDistanceChanging() then state.lastWalkTime = now end
 	-- No prediction after a pause (the game in the background, a loading
 	-- screen) or across a jump no mouse makes in one frame (the cursor coming
 	-- back in from outside the window): it would throw the glow off the cursor.
@@ -798,12 +810,13 @@ driver:SetScript("OnUpdate", function()
 	-- A cursor change on the same target (no reach or leave in its frame) is
 	-- either the game swapping between the normal and "unable" versions (range)
 	-- or the look changing on the same unit: its nameplate keeps the base
-	-- cursor, the unit itself shows the sword. The sword has no range version
-	-- and crossing a nameplate needs the mouse to move, so for an enemy or with
-	-- the mouse moving it is a look change; so is one with a modifier key
-	-- pressed or released (shift over a corpse shows the base cursor). Range
-	-- changes are decided a little
-	-- later, so a nameplate handover noticed a frame late is not taken for one.
+	-- cursor, the unit itself shows its own. With a modifier key pressed or
+	-- released it is a look change (shift over a corpse). While the player or
+	-- the target moves, the distance is changing: a range change, even with
+	-- the mouse following the target. Standing still, a moving mouse means a
+	-- look change (crossing a nameplate), as does any change on an enemy.
+	-- Range changes are decided a little later, so a nameplate handover
+	-- noticed a frame late is not taken for one.
 	local change = state.pendingChange
 	if change then
 		local now = GetTime()
@@ -821,7 +834,7 @@ driver:SetScript("OnUpdate", function()
 			state.pendingChange, state.lookSettled, state.hoverCheckTime = nil, true, 0
 			state.cursorChanged = true
 			debug("loot cursor swapped by", "modifier key")
-		elseif change.moving or change.modifier or state.hoverCursor == "Attack" then
+		elseif change.modifier or not change.walking and (change.moving or state.hoverCursor == "Attack") then
 			state.pendingChange = nil
 			state.cursorChanged, state.lookSettled, state.hoverCheckTime = not state.cursorChanged, true, 0
 			debug("hover look", state.cursorChanged and "on" or "off", "(same target)")
@@ -830,8 +843,8 @@ driver:SetScript("OnUpdate", function()
 			-- target: far away it shows the base cursor, closer its greyed
 			-- "unable" cursor, in range the normal one.
 			state.pendingChange = nil
-			debug("cursor change on the same target | within duel range:", tostring(checkDistance(3)),
-				"| within follow range:", tostring(checkDistance(4)))
+			debug("cursor change on the same target | distance changing:", tostring(change.walking),
+				"| within duel range:", tostring(checkDistance(3)), "| within follow range:", tostring(checkDistance(4)))
 			if not state.cursorChanged then
 				-- walked close enough for the target's cursor to appear
 				state.cursorChanged, state.lookSettled, state.hoverCheckTime = true, true, 0
@@ -996,7 +1009,8 @@ function events:CURSOR_CHANGED(isDefault, newCursorType)
 	debug("CURSOR_CHANGED")
 	-- decided at the end of the frame, once any target signals of this frame are in
 	state.pendingChange = {time = now, moving = now - state.lastMoveTime < .1,
-		modifier = now - (state.modifierTime or -1) < UI_HANDOVER}
+		modifier = now - (state.modifierTime or -1) < UI_HANDOVER,
+		walking = now - (state.lastWalkTime or -1) < .25}
 	-- fallback: an object tooltip lingers after leaving the object, so a
 	-- cursor change after reaching it, with the mouse moving (not a range
 	-- change), means the mouse left it
