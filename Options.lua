@@ -258,6 +258,10 @@ local function build()
 		"How much stronger the glow is around the glove drawn while turning the camera.")
 	intensity:SetPoint("TOPLEFT", tint, "BOTTOMLEFT", 0, -34)
 
+	local idlePulse = createCheckbox("idlePulse", "Pulse when idle",
+		"After a few seconds without moving the mouse, the glow slowly fades out and back in until you move it again.")
+	idlePulse:SetPoint("TOPLEFT", intensity, "BOTTOMLEFT", -4, -20)
+
 	local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	reset:SetSize(140, 22)
 	reset:SetText("Reset to defaults")

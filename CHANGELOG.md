@@ -2,6 +2,7 @@
 
 ## 1.0.2
 
+- New option "Pulse when idle" (off by default): after a few seconds without moving the mouse, the glow slowly fades out and back in until you move it again.
 - New option "Show the glow": always (the default), in combat only, or out of combat only. Shake to find still shows the glow for a moment either way.
 - New option "Shake to find" (on by default): shake the mouse quickly side to side and a bright halo bursts out around the cursor, fading over a second. A "Shakes needed" slider sets how many direction changes in a row it takes (7 by default, 2 to 10).
 - New option "Pulse in combat" (off by default): while you're in combat the glow gently pulses brighter, with a soft halo. Untick "Pulse uses glow colour" to pick a pulse colour, such as red, that the glow takes on as it pulses.

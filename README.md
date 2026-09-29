@@ -35,7 +35,7 @@ Hold the left or right mouse button and the game hides your cursor. Cursor Glow 
 Lost it anyway? Shake the mouse quickly side to side and a bright halo bursts out around the cursor; you choose how many shakes it takes. Turn on the combat pulse and the glow gently pulses while you fight, so it's easy to keep track of, in your glow colour or a colour of its own (a tinge of red, say, to show you're in combat).
 
 ### Only when you want it
-Show the glow all the time, only in combat, or only out of combat.
+Show the glow all the time, only in combat, or only out of combat. Turn on the idle pulse and, after a few seconds without moving the mouse, the glow slowly fades out and back in until you move it again.
 
 ### Keeps up with you
 The glow is placed where your cursor is heading, so it stays on the cursor during fast movement. It also copes cleanly with alt-tabbing and loading screens.
@@ -53,7 +53,7 @@ Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > 
 | Movement prediction | Draw the glove while turning the camera |
 | Shake to find, and shakes needed | Glove colour and tint |
 | Pulse in combat, and its colour | Glow intensity while turning |
-| Reset to defaults | |
+| Reset to defaults | Pulse when idle |
 
 ## Commands
 

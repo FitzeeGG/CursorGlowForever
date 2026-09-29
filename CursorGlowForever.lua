@@ -88,6 +88,7 @@ ns.defaults = {
 	combatPulse = false,
 	pulseUseGlowColor = true,
 	pulseColor = {1, .1, .05},
+	idlePulse = false,
 	prediction = 1,
 }
 ns.CURSOR_SIZES = CURSOR_SIZES
@@ -575,6 +576,7 @@ local state = {
 	lastX = 0,
 	lastY = 0,
 	lastMoveTime = 0,
+	lastHiddenTime = 0, -- turning the camera counts as using the mouse
 	lastFrameTime = 0,
 }
 
@@ -800,6 +802,10 @@ local FIND_TIME, FIND_BRIGHTNESS = 1, 1 -- extra brightness at the start
 local FIND_HALO_FROM, FIND_HALO_TO, FIND_HALO_ALPHA = 4, 10, 1 -- halo diameter (cursor sizes) and alpha
 local PULSE_PERIOD, PULSE_BRIGHTNESS, PULSE_HALO, PULSE_HALO_ALPHA = 1.2, .6, 5, .55
 local PULSE_TINT = .7 -- how far the glow moves to the pulse colour at the peak
+-- Idle pulse: after IDLE_DELAY seconds without the mouse moving, the whole
+-- glow slowly fades out and back in, once every IDLE_PERIOD seconds, until the
+-- mouse moves.
+local IDLE_DELAY, IDLE_PERIOD = 3, 6
 local shake = {direction = 0, swing = 0, count = 0, lastReversal = -10, lastX = nil, findTime = -10}
 
 
@@ -860,6 +866,18 @@ function ns.updateEffects(x)
 	end
 	if brightness ~= cursor.effectAlpha then ns.updateOpacity(brightness) end
 	return finding
+end
+
+
+function ns.updateIdlePulse(idle)
+	local alpha = 1
+	if ns.db.idlePulse and idle > IDLE_DELAY then
+		alpha = .5 + .5 * math.cos((idle - IDLE_DELAY) * 2 * math.pi / IDLE_PERIOD)
+	end
+	if alpha ~= cursor.idleAlpha then
+		cursor.idleAlpha = alpha
+		cursor:SetAlpha(alpha)
+	end
 end
 
 
@@ -1021,6 +1039,8 @@ driver:SetScript("OnUpdate", function()
 		show = false
 	end
 	cursor:SetShown(show)
+	if hidden then state.lastHiddenTime = now end
+	ns.updateIdlePulse(now - math.max(state.lastMoveTime, state.lastHiddenTime))
 	if show then
 		local lead = hidden and 0 or db.prediction
 		local scale = UIParent:GetEffectiveScale()
