@@ -218,8 +218,11 @@ function ns.updateLayout()
 	cursor:SetSize(size, size)
 	cursor.sizeIndex, cursor.size = sizeIndex, size
 
+	-- the outline texture covers twice the cursor; the glow reaches further and
+	-- covers four times it, so it fades out before its edges
+	cursor.outline:SetSize(size * 2, size * 2)
+	cursor.glow:SetSize(size * 4, size * 4)
 	for _, texture in ipairs({cursor.glow, cursor.outline}) do
-		texture:SetSize(size * 2, size * 2)
 		texture:ClearAllPoints()
 		texture:SetPoint("CENTER", cursor, "CENTER")
 		texture:SetVertexColor(r, g, b)

@@ -1,5 +1,9 @@
 # Cursor Glow Forever
 
+## 1.0.2
+
+- Fixed: faint square lines at the edges of the glow. The glow texture now fades out completely before its edges.
+
 ## 1.0.1
 
 - New option "Outline vendors and services" (off by default): outlines on vendors, repairers, bankers, innkeepers, flight masters, stable masters and trainers are now optional, since an NPC with a quest for you shows the quest cursor instead and that can't always be told in advance.
