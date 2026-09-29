@@ -288,6 +288,9 @@ local NPC_TITLES = {
 local OBJECT_NAMES = {
 	{"Mailbox", "Mail"},
 }
+-- NPC service cursors: always recognised (they tell a switch between two hover
+-- cursors from one back to the base cursor), only outlined with the option
+local SERVICE_LOOKS = {Buy = true, RepairNPC = true, Taxi = true, Innkeeper = true, Trainer = true, StableMaster = true}
 -- service objects, outlined with the NPC services
 local SERVICE_OBJECT_NAMES = {
 	{"Guild Vault", "Buy"},
@@ -454,7 +457,7 @@ local function getHoverCursor()
 			return tooltipShown and findGathering(2) or nil
 		end
 		if UnitCanAttack("player", "mouseover") then return "Attack" end
-		if ns.db.outlineServices and tooltipShown and not UnitPlayerControlled("mouseover")
+		if tooltipShown and not UnitPlayerControlled("mouseover")
 			and not isKnownQuestGiver("mouseover") then
 			return findText(2, 2, NPC_TITLES)
 		end
@@ -463,8 +466,7 @@ local function getHoverCursor()
 	if not tooltipShown then return end
 	local name = getLineText(1)
 	if name == MINIMAP_TRACKING_MAILBOX then return "Mail" end
-	return findText(1, 1, OBJECT_NAMES) or ns.db.outlineServices and findText(1, 1, SERVICE_OBJECT_NAMES)
-		or findGathering(1)
+	return findText(1, 1, OBJECT_NAMES) or findText(1, 1, SERVICE_OBJECT_NAMES) or findGathering(1)
 end
 
 
@@ -500,6 +502,7 @@ local state = {
 	hoverCheckTime = 0,
 	tooltipChanged = false,
 	uiCursor = nil, -- cursor set by the UI: {look = HOVER_SHEETS key or false, focus = frame}
+	lookByName = {}, -- per target name: whether it has its own cursor (this session)
 	lastX = 0,
 	lastY = 0,
 	lastMoveTime = 0,
@@ -522,21 +525,10 @@ local function isWorldTooltipShown()
 end
 
 
--- Nameplates usually take no mouse focus, but hovering one sets the mouseover
--- unit while the game keeps the base cursor (the sword only shows over the
--- unit itself). Nameplates can be forbidden, hence the pcall.
-local function isOverNameplate()
-	if not (C_NamePlate and C_NamePlate.GetNamePlateForUnit) then return false end
-	local ok, over = pcall(function()
-		local plate = C_NamePlate.GetNamePlateForUnit("mouseover")
-		return plate and plate:IsMouseOver() and true or false
-	end)
-	return ok and over or false
-end
-
-
--- Over UI frames (nameplates, unit frames, bars) the game keeps the base
--- cursor unless the UI sets one, even though a nameplate sets the mouseover unit.
+-- Over UI frames (unit frames, bars, nameplates that take the mouse) the game
+-- keeps the base cursor unless the UI sets one. Nameplates are not measured:
+-- many are restricted, and measuring those taints. Crossing between a
+-- nameplate and its unit is read from the cursor changes instead.
 local function isOverWorld()
 	local focus
 	if GetMouseFoci then
@@ -544,8 +536,21 @@ local function isOverWorld()
 	elseif GetMouseFocus then
 		focus = GetMouseFocus()
 	end
-	if focus ~= nil and focus ~= WorldFrame then return false end
-	return not isOverNameplate()
+	return focus == nil or focus == WorldFrame
+end
+
+
+-- the unit's name, or the object's from its tooltip (names can be secret)
+local function getTargetName()
+	if UnitExists("mouseover") then
+		local ok, name = pcall(function()
+			local unitName = UnitName("mouseover")
+			if issecretvalue and issecretvalue(unitName) then return nil end
+			return unitName
+		end)
+		return ok and name or nil
+	end
+	return getLineText(1)
 end
 
 
@@ -565,6 +570,7 @@ local function reachTarget(signal)
 	if not state.worldEvent and not state.leftSinceReach and now - state.targetTime <= CHANGE_WINDOW then return end
 	state.leftSinceReach = false
 	state.lookSettled = false
+	state.arriving = true
 	-- Moving straight from one target to the next, the game sends the leave
 	-- and the reach in the same frame: the look carries over from the target
 	-- just left (two chairs keep the cog, no cursor change comes).
@@ -589,15 +595,6 @@ local function reachTarget(signal)
 	ns.updateOpacity()
 	state.reportedUnknown = false
 	debug("reached target via", signal, "- hover look before:", state.changedBefore)
-	if ns.debug and UnitExists("mouseover") then
-		local ok, result = pcall(function()
-			if not (C_NamePlate and C_NamePlate.GetNamePlateForUnit) then return "no C_NamePlate" end
-			local plate = C_NamePlate.GetNamePlateForUnit("mouseover")
-			if not plate then return "no nameplate" end
-			return (plate:IsShown() and "shown" or "hidden")..", mouse "..(plate:IsMouseOver() and "over" or "not over")
-		end)
-		debug("nameplate:", ok and result or ("blocked: "..tostring(result)))
-	end
 end
 
 
@@ -669,18 +666,29 @@ local function updateCursorChanged()
 	state.wasOnTarget = onTarget
 
 	-- (a look change on the same target has already settled it)
-	if onTarget and not state.lookSettled and GetTime() - state.targetTime <= CHANGE_WINDOW then
+	local inWindow = GetTime() - state.targetTime <= CHANGE_WINDOW
+	if onTarget and not state.lookSettled and inWindow then
 		local cursorChanged = cursorChangedNear(state.targetTime)
 		local changed = state.changedBefore ~= cursorChanged
 		-- Straight from one hover target to another with a cursor change is
 		-- either back to the base cursor or on to another hover cursor (sword to
-		-- vendor bag); a recognised target settles it. The tooltip can arrive a
-		-- few frames late, hence the whole window.
-		if state.changedBefore and cursorChanged and state.hoverCursor then changed = true end
+		-- vendor bag, innkeeper to chair); a recognised target, or what was
+		-- learned about it, settles it. The tooltip can arrive a few frames
+		-- late, hence the whole window.
+		if state.changedBefore and cursorChanged
+			and (state.hoverCursor or state.lookByName[getTargetName() or ""]) then
+			changed = true
+		end
 		if changed ~= state.cursorChanged then
 			state.cursorChanged = changed
 			debug("hover look", changed and "on" or "off")
 		end
+	elseif state.arriving and not inWindow then
+		-- Reached from the base cursor the answer is certain: learn whether this
+		-- target has its own cursor, for later direct switches onto it.
+		state.arriving = false
+		local name = onTarget and not state.lookSettled and not state.changedBefore and getTargetName()
+		if name then state.lookByName[name] = state.cursorChanged end
 	end
 end
 
@@ -766,7 +774,7 @@ driver:SetScript("OnUpdate", function()
 		end
 
 		if state.cursorChanged then
-			if state.hoverCursor and db.outlineHover then
+			if state.hoverCursor and db.outlineHover and (db.outlineServices or not SERVICE_LOOKS[state.hoverCursor]) then
 				mode = state.hoverCursor
 			else
 				show = false
