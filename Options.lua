@@ -246,9 +246,19 @@ local function build()
 	enabled:SetPoint("TOPLEFT", content, "TOPLEFT", 14, -4)
 	enabled.onChange = ns.setEnabled
 
+	local perCharacter = createCheckbox(nil, "Settings for this character only",
+		"Give this character its own settings, starting from the account-wide ones. Untick to go back to the account-wide settings (this character's are kept for next time).")
+	perCharacter:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -4)
+	perCharacter:SetScript("OnClick", function(self)
+		ns.setCharacterSettings(self:GetChecked())
+		PlaySound(self:GetChecked() and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
+		onChanged()
+	end)
+	function perCharacter:refresh() self:SetChecked(ns.charDB.useCharacterSettings) end
+
 	-- COLOUR
 	local classColor = createCheckbox("useClassColor", "Use class colour", "Colour the glow with your class colour. Untick to pick a custom colour.")
-	classColor:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -16)
+	classColor:SetPoint("TOPLEFT", perCharacter, "BOTTOMLEFT", 0, -16)
 	local swatch = createColorSwatch("color", "Custom colour", "useClassColor")
 	swatch:SetPoint("LEFT", classColor.label, "RIGHT", 24, 0)
 

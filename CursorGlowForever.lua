@@ -1099,17 +1099,55 @@ function events:ADDON_LOADED(name)
 		CursorGlowForeverDB.gloveTint = nil
 	end
 	CursorGlowForeverDB.version = 2
-	for key, value in pairs(ns.defaults) do
-		if CursorGlowForeverDB[key] == nil then
-			CursorGlowForeverDB[key] = type(value) == "table" and CopyTable(value) or value
-		end
-	end
-	ns.db = CursorGlowForeverDB
 	CursorGlowForeverCharDB = CursorGlowForeverCharDB or {}
 	CursorGlowForeverCharDB.questGivers = CursorGlowForeverCharDB.questGivers or {}
 	ns.charDB = CursorGlowForeverCharDB
 	state.lastX, state.lastY = GetCursorPosition()
+	ns.useProfile()
+end
+
+
+-- PROFILES
+-- Settings are account-wide (CursorGlowForeverDB) unless a character uses its
+-- own (CursorGlowForeverCharDB.settings), started as a copy of the account's.
+local function fillDefaults(settings)
+	for key, value in pairs(ns.defaults) do
+		if settings[key] == nil then
+			settings[key] = type(value) == "table" and CopyTable(value) or value
+		end
+	end
+	return settings
+end
+
+
+local function copySettings(from)
+	local copy = {}
+	for key in pairs(ns.defaults) do
+		local value = from[key]
+		copy[key] = type(value) == "table" and CopyTable(value) or value
+	end
+	return copy
+end
+
+
+function ns.useProfile()
+	local charDB = ns.charDB
+	if charDB.useCharacterSettings then
+		charDB.settings = charDB.settings or copySettings(fillDefaults(CursorGlowForeverDB))
+		ns.db = fillDefaults(charDB.settings)
+	else
+		ns.db = fillDefaults(CursorGlowForeverDB)
+	end
 	ns.setEnabled(ns.db.enabled)
+	if cursor.size then ns.updateLayout() end
+end
+
+
+-- perCharacter: this character's own settings (a copy of the account's the
+-- first time), or the account-wide ones; the other set is kept
+function ns.setCharacterSettings(perCharacter)
+	ns.charDB.useCharacterSettings = perCharacter and true or false
+	ns.useProfile()
 end
 
 
