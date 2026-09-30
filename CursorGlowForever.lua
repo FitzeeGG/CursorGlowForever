@@ -535,6 +535,13 @@ function ns.readInteractDistance(index)
 end
 
 
+-- The distance checks are protected in combat (calling one there is blocked
+-- and reported, pcall or not), so in combat the distance is unknown.
+function ns.canCheckDistance()
+	return CheckInteractDistance ~= nil and UnitExists("mouseover") and not InCombatLockdown()
+end
+
+
 -- A quest giver shows the quest cursor over its service one (the vendor bag,
 -- the repair anvil...), and the game does not tell addons which NPCs have
 -- quests. What talking to an NPC showed (per character) comes first; else the
@@ -727,7 +734,7 @@ local function reachTarget(signal)
 	-- between the two versions (see state.pendingChange). Objects give no
 	-- starting state, so they are never dimmed.
 	ns.hoverInRange = nil
-	if UnitExists("mouseover") and CheckInteractDistance then
+	if ns.canCheckDistance() then
 		local ok, inRange = pcall(ns.readInteractDistance, 3)
 		if ok then ns.hoverInRange = inRange end
 	end
@@ -785,7 +792,7 @@ end
 -- than duel range, so only beyond follow range is the target "too far" for its
 -- cursor. True when it can't be told, so a change is then read as a range swap.
 local function checkDistance(index)
-	if not (UnitExists("mouseover") and CheckInteractDistance) then return nil end
+	if not ns.canCheckDistance() then return nil end
 	local ok, within = pcall(ns.readInteractDistance, index)
 	if ok then return within end
 end
