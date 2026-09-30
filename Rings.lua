@@ -110,20 +110,43 @@ function ns.updateCastRing()
 end
 
 
+-- a spell's cooldown: start, duration and, where the client says, whether it
+-- is the global cooldown
 local function getSpellCooldown(spellID)
 	if C_Spell and C_Spell.GetSpellCooldown then
 		local info = C_Spell.GetSpellCooldown(spellID)
-		if info then return info.startTime, info.duration end
+		if info then return info.startTime, info.duration, info.isOnGCD end
+		return
 	end
-	if GetSpellCooldown then return GetSpellCooldown(spellID) end
+	if GetSpellCooldown then
+		local start, duration = GetSpellCooldown(spellID)
+		return start, duration
+	end
 end
 
 
--- a running cooldown short enough to be the global one
-local function readGlobalCooldown(spellID)
-	local ok, start, duration = pcall(getSpellCooldown, spellID)
-	if not ok or not start or not duration or isSecret(start) or isSecret(duration) then return end
-	if duration > 0 and duration <= GCD_LONGEST then return start, duration end
+local function describe(value)
+	if isSecret(value) then return "secret" end
+	return tostring(value)
+end
+
+
+local function showGlobalCooldown(start, duration, source)
+	if start == rings.gcd.start then return end
+	startRing(rings.gcd, start, duration, false)
+	ns.debugPrint("global cooldown", duration, "from", source)
+end
+
+
+-- Secret values (the client can hide them from addons) can't be read or
+-- compared, but a cooldown frame can still show them.
+local function showSecretGlobalCooldown(start, duration, source)
+	rings.gcd:SetReverse(true) -- fills up, as startRing does
+	if not pcall(rings.gcd.SetCooldown, rings.gcd, start, duration) then return false end
+	rings.gcd.start = nil
+	rings.gcd.track:Hide()
+	ns.debugPrint("global cooldown (hidden values) from", source)
+	return true
 end
 
 
@@ -138,20 +161,38 @@ local lastSpell, referenceSpell
 function ns.updateGCDRing(spellID)
 	if not ns.db.gcdRing then return stopRing(rings.gcd) end
 	lastSpell = spellID or lastSpell
-	local start, duration, source = readGlobalCooldown(GCD_SPELL)
-	source = start and "global cooldown spell"
-	if not start and referenceSpell then
-		start, duration = readGlobalCooldown(referenceSpell)
-		source = start and "reference spell "..referenceSpell
+	local report = {}
+
+	local ok, start, duration = pcall(getSpellCooldown, GCD_SPELL)
+	table.insert(report, GCD_SPELL..": "..describe(start).." / "..describe(duration))
+	if ok and start and duration then
+		if isSecret(start) or isSecret(duration) then
+			if showSecretGlobalCooldown(start, duration, "the global cooldown spell") then return end
+		elseif duration > 0 and duration <= GCD_LONGEST then
+			return showGlobalCooldown(start, duration, "the global cooldown spell")
+		end
 	end
-	if not start and lastSpell then
-		start, duration = readGlobalCooldown(lastSpell)
-		if start then referenceSpell, source = lastSpell, "spell used "..lastSpell end
+
+	for _, candidate in ipairs({referenceSpell or false, lastSpell ~= referenceSpell and lastSpell or false}) do
+		if candidate then
+			local onGCD
+			ok, start, duration, onGCD = pcall(getSpellCooldown, candidate)
+			table.insert(report, candidate..": "..describe(start).." / "..describe(duration).." on global cooldown: "..describe(onGCD))
+			if ok and start and duration then
+				if isSecret(start) or isSecret(duration) then
+					-- only the client's own word can tell it is the global cooldown
+					if onGCD == true and showSecretGlobalCooldown(start, duration, "spell "..candidate) then
+						referenceSpell = candidate
+						return
+					end
+				elseif duration > 0 and duration <= GCD_LONGEST then
+					referenceSpell = candidate
+					return showGlobalCooldown(start, duration, "spell "..candidate)
+				end
+			end
+		end
 	end
-	if start and start ~= rings.gcd.start then
-		startRing(rings.gcd, start, duration, false)
-		ns.debugPrint("global cooldown", duration, "from", source)
-	end
+	if spellID then ns.debugPrint("no global cooldown found for spell", spellID, "|", table.concat(report, " | ")) end
 end
 
 
@@ -165,11 +206,13 @@ end
 
 local events = CreateFrame("Frame")
 events:SetScript("OnEvent", function(_, event, unit, _, spellID)
-	if unit and unit ~= "player" then return end
-	if event == "SPELL_UPDATE_COOLDOWN" then
-		ns.updateGCDRing()
-	elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+	-- SPELL_UPDATE_COOLDOWN's first value is a spell, not a unit
+	if event == "SPELL_UPDATE_COOLDOWN" then return ns.updateGCDRing() end
+	if unit ~= "player" then return end
+	if event == "UNIT_SPELLCAST_SUCCEEDED" then
 		ns.updateGCDRing(spellID)
+		-- the cooldown can be set just after the cast: look again next frame
+		if C_Timer and C_Timer.After then C_Timer.After(0, function() ns.updateGCDRing() end) end
 	else
 		ns.updateCastRing()
 		if event == "UNIT_SPELLCAST_START" then ns.updateGCDRing(spellID) end
