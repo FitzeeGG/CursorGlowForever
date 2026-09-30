@@ -732,6 +732,12 @@ end)
 local category = Settings.RegisterCanvasLayoutCategory(panel, ns.TITLE)
 Settings.RegisterAddOnCategory(category)
 
+local openAfterCombat = CreateFrame("Frame")
+openAfterCombat:SetScript("OnEvent", function(self)
+	self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+	Settings.OpenToCategory(category:GetID())
+end)
+
 SLASH_CURSORGLOWFOREVER1 = "/cg"
 SLASH_CURSORGLOWFOREVER2 = "/cursorglow"
 SLASH_CURSORGLOWFOREVER3 = "/cursorglowforever"
@@ -748,6 +754,12 @@ SlashCmdList.CURSORGLOWFOREVER = function(msg)
 		ns.startRing(ns.rings.cast, now, 3, false)
 		ns.startRing(ns.rings.gcd, now, 1.5, false)
 		print("|cff66ccffCursor Glow Forever:|r test rings: a 3 second cast ring and a 1.5 second global cooldown ring")
+		return
+	end
+	-- the settings can't be opened in combat: open them when it ends
+	if InCombatLockdown() then
+		printMessage(L["The settings will open when you leave combat."])
+		openAfterCombat:RegisterEvent("PLAYER_REGEN_ENABLED")
 		return
 	end
 	Settings.OpenToCategory(category:GetID())

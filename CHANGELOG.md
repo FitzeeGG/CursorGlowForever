@@ -11,6 +11,7 @@
 - Profiles: settings now live in named profiles that all your characters share, and each character remembers which one it uses. Create a profile from a copy of the current settings, switch between them, copy settings from another profile, or delete one. Your current settings become the Default profile, and a character that had its own settings gets a profile named after it.
 - The settings page is split into two tabs, Cursor and Effects, under the live preview.
 - Fixed: an "AddOn tried to call the protected function CheckInteractDistance()" error in combat. The distance check is protected in combat, so the addon no longer checks range then; outlines just aren't dimmed for range until the fight ends.
+- Fixed: an "AddOn tried to call the protected function OpenSettingsPanel()" error when typing /cg in combat. The settings now open as soon as combat ends.
 - Fixed: dragging a settings slider could make the game stutter.
 - Less work and far less memory churn every frame: the checks that run each frame no longer create throwaway data, so the reported memory stays steady and the cursor stays smooth.
 

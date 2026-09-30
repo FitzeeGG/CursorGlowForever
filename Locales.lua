@@ -100,6 +100,7 @@ if locale == "deDE" then
 		["Custom ring size"] = "Eigene Ringgröße",
 		["How big the rings are, compared with the default size."] = "Wie groß die Ringe sind, verglichen mit der Standardgröße.",
 		["Drag to place the ring"] = "Ziehen, um den Ring zu platzieren",
+		["The settings will open when you leave combat."] = "Die Einstellungen öffnen sich, sobald du den Kampf verlässt.",
 	}
 elseif locale == "frFR" then
 	translations = {
@@ -192,6 +193,7 @@ elseif locale == "frFR" then
 		["Custom ring size"] = "Taille personnalisée",
 		["How big the rings are, compared with the default size."] = "Taille des anneaux par rapport à la taille par défaut.",
 		["Drag to place the ring"] = "Faites glisser pour placer l'anneau",
+		["The settings will open when you leave combat."] = "Les réglages s'ouvriront à la fin du combat.",
 	}
 elseif locale == "esES" or locale == "esMX" then
 	translations = {
@@ -284,6 +286,7 @@ elseif locale == "esES" or locale == "esMX" then
 		["Custom ring size"] = "Tamaño personalizado",
 		["How big the rings are, compared with the default size."] = "Tamaño de los anillos comparado con el tamaño predeterminado.",
 		["Drag to place the ring"] = "Arrastra para colocar el anillo",
+		["The settings will open when you leave combat."] = "Los ajustes se abrirán cuando salgas del combate.",
 	}
 elseif locale == "ptBR" then
 	translations = {
@@ -376,6 +379,7 @@ elseif locale == "ptBR" then
 		["Custom ring size"] = "Tamanho personalizado",
 		["How big the rings are, compared with the default size."] = "Tamanho dos anéis comparado com o tamanho padrão.",
 		["Drag to place the ring"] = "Arraste para posicionar o anel",
+		["The settings will open when you leave combat."] = "As configurações vão abrir quando você sair de combate.",
 	}
 elseif locale == "itIT" then
 	translations = {
@@ -468,6 +472,7 @@ elseif locale == "itIT" then
 		["Custom ring size"] = "Dimensione personalizzata",
 		["How big the rings are, compared with the default size."] = "Quanto sono grandi gli anelli rispetto alla dimensione predefinita.",
 		["Drag to place the ring"] = "Trascina per posizionare l'anello",
+		["The settings will open when you leave combat."] = "Le impostazioni si apriranno quando esci dal combattimento.",
 	}
 elseif locale == "ruRU" then
 	translations = {
@@ -560,6 +565,7 @@ elseif locale == "ruRU" then
 		["Custom ring size"] = "Свой размер колец",
 		["How big the rings are, compared with the default size."] = "Размер колец по сравнению с размером по умолчанию.",
 		["Drag to place the ring"] = "Перетащите, чтобы разместить кольцо",
+		["The settings will open when you leave combat."] = "Настройки откроются, когда вы выйдете из боя.",
 	}
 elseif locale == "koKR" then
 	translations = {
@@ -652,6 +658,7 @@ elseif locale == "koKR" then
 		["Custom ring size"] = "사용자 지정 고리 크기",
 		["How big the rings are, compared with the default size."] = "기본 크기와 비교한 고리의 크기입니다.",
 		["Drag to place the ring"] = "끌어서 고리 놓기",
+		["The settings will open when you leave combat."] = "전투가 끝나면 설정이 열립니다.",
 	}
 elseif locale == "zhCN" then
 	translations = {
@@ -744,6 +751,7 @@ elseif locale == "zhCN" then
 		["Custom ring size"] = "自定义圆环大小",
 		["How big the rings are, compared with the default size."] = "圆环相对于默认大小的比例。",
 		["Drag to place the ring"] = "拖动以放置圆环",
+		["The settings will open when you leave combat."] = "脱离战斗后将打开设置。",
 	}
 elseif locale == "zhTW" then
 	translations = {
@@ -836,6 +844,7 @@ elseif locale == "zhTW" then
 		["Custom ring size"] = "自訂圓環大小",
 		["How big the rings are, compared with the default size."] = "圓環相對於預設大小的比例。",
 		["Drag to place the ring"] = "拖曳以放置圓環",
+		["The settings will open when you leave combat."] = "脫離戰鬥後將開啟設定。",
 	}
 end
 
