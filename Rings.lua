@@ -110,21 +110,47 @@ function ns.updateCastRing()
 end
 
 
-local function getGlobalCooldown()
+local function getSpellCooldown(spellID)
 	if C_Spell and C_Spell.GetSpellCooldown then
-		local info = C_Spell.GetSpellCooldown(GCD_SPELL)
+		local info = C_Spell.GetSpellCooldown(spellID)
 		if info then return info.startTime, info.duration end
 	end
-	if GetSpellCooldown then return GetSpellCooldown(GCD_SPELL) end
+	if GetSpellCooldown then return GetSpellCooldown(spellID) end
 end
 
 
-function ns.updateGCDRing()
-	if not ns.db.gcdRing then return stopRing(rings.gcd) end
-	local ok, start, duration = pcall(getGlobalCooldown)
+-- a running cooldown short enough to be the global one
+local function readGlobalCooldown(spellID)
+	local ok, start, duration = pcall(getSpellCooldown, spellID)
 	if not ok or not start or not duration or isSecret(start) or isSecret(duration) then return end
-	if duration > 0 and duration <= GCD_LONGEST and start ~= rings.gcd.start then
+	if duration > 0 and duration <= GCD_LONGEST then return start, duration end
+end
+
+
+-- The global cooldown: from its own spell where the client has one, else
+-- from a spell with no cooldown of its own, which shows the global cooldown
+-- while it runs: the spell just used, remembered for spells that have a
+-- longer cooldown of their own. Spells off the global cooldown (Heroic
+-- Strike, say) start none.
+local lastSpell, referenceSpell
+
+
+function ns.updateGCDRing(spellID)
+	if not ns.db.gcdRing then return stopRing(rings.gcd) end
+	lastSpell = spellID or lastSpell
+	local start, duration, source = readGlobalCooldown(GCD_SPELL)
+	source = start and "global cooldown spell"
+	if not start and referenceSpell then
+		start, duration = readGlobalCooldown(referenceSpell)
+		source = start and "reference spell "..referenceSpell
+	end
+	if not start and lastSpell then
+		start, duration = readGlobalCooldown(lastSpell)
+		if start then referenceSpell, source = lastSpell, "spell used "..lastSpell end
+	end
+	if start and start ~= rings.gcd.start then
 		startRing(rings.gcd, start, duration, false)
+		ns.debugPrint("global cooldown", duration, "from", source)
 	end
 end
 
@@ -138,13 +164,15 @@ end
 
 
 local events = CreateFrame("Frame")
-events:SetScript("OnEvent", function(_, event, unit)
+events:SetScript("OnEvent", function(_, event, unit, _, spellID)
 	if unit and unit ~= "player" then return end
-	if event == "SPELL_UPDATE_COOLDOWN" or event == "UNIT_SPELLCAST_SUCCEEDED" then
+	if event == "SPELL_UPDATE_COOLDOWN" then
 		ns.updateGCDRing()
+	elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+		ns.updateGCDRing(spellID)
 	else
 		ns.updateCastRing()
-		if event == "UNIT_SPELLCAST_START" then ns.updateGCDRing() end
+		if event == "UNIT_SPELLCAST_START" then ns.updateGCDRing(spellID) end
 	end
 end)
 for _, event in ipairs({"UNIT_SPELLCAST_START", "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_FAILED",
