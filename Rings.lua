@@ -8,6 +8,11 @@ local cursor = ns.cursor
 local RING = ns.TEXTURES.."ring"
 local CAST_DIAMETER, GCD_DIAMETER = 2.6, 2.1 -- in cursor sizes
 local RING_ALPHA, TRACK_ALPHA = .9, .2 -- the track: the faint full ring behind a running one
+-- where the rings sit, from the middle of the cursor in cursor sizes (the
+-- frame's top left is the hotspot: the glove's finger tip), and their size
+local RING_POSITIONS = {default = {0, 0}, fingertip = {-.5, .5}}
+local RING_SIZES = {default = 1, small = .7, medium = 1.2, large = 1.6}
+local RING_OFFSET_LIMIT = 2.5 -- cursor sizes, for a custom position
 local GCD_SPELL = 61304 -- the global cooldown
 local GCD_LONGEST = 2 -- seconds; anything longer is a real cooldown, not the global one
 local RIPPLE_TIME, RIPPLE_FROM, RIPPLE_TO, RIPPLE_ALPHA = .45, .5, 2.8, .9 -- seconds, cursor sizes
@@ -29,6 +34,7 @@ end
 -- RINGS
 local function createRing(parent, diameter)
 	local ring = CreateFrame("Cooldown", nil, parent)
+	ring.parent = parent
 	ring:SetPoint("CENTER", parent, "CENTER")
 	ring:SetSwipeTexture(RING)
 	ring:SetDrawEdge(false)
@@ -66,10 +72,38 @@ function ns.createRings(parent)
 end
 
 
+function ns.getRingOffset()
+	local db = ns.db
+	local offset = db.ringPosition == "custom" and db.ringOffset or RING_POSITIONS[db.ringPosition] or RING_POSITIONS.default
+	return offset[1], offset[2]
+end
+
+
+-- a custom position, kept near the cursor
+function ns.setRingOffset(x, y)
+	local limit = RING_OFFSET_LIMIT
+	ns.db.ringOffset = {math.max(-limit, math.min(limit, x)), math.max(-limit, math.min(limit, y))}
+end
+
+
+function ns.getRingScale()
+	local db = ns.db
+	if db.ringSize == "custom" then return db.ringScale end
+	return RING_SIZES[db.ringSize] or 1
+end
+
+
 function ns.layoutRings(rings, size)
 	local r, g, b = getRingColor()
+	local x, y = ns.getRingOffset()
+	local scale = ns.getRingScale()
 	for _, ring in pairs(rings) do
-		local diameter = size * ring.diameter
+		local diameter = size * ring.diameter * scale
+		local parent = ring.parent
+		ring:ClearAllPoints()
+		ring:SetPoint("CENTER", parent, "CENTER", x * size, y * size)
+		ring.track:ClearAllPoints()
+		ring.track:SetPoint("CENTER", parent, "CENTER", x * size, y * size)
 		ring:SetSize(diameter, diameter)
 		ring:SetSwipeColor(r, g, b, RING_ALPHA)
 		ring.track:SetSize(diameter, diameter)

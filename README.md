@@ -37,7 +37,7 @@ Hold a mouse button to turn the camera and the game hides your cursor. Cursor Gl
 - **Global cooldown ring:** a second, smaller ring fills up over the global cooldown.
 - **Click ripple:** a ring spreads out and fades wherever you click.
 
-All three are off by default, and the rings can use the glow colour or their own.
+All three are off by default. The rings can use the glow colour or their own, sit around the cursor, on its finger tip or wherever you drag them in the settings preview, and come in small, medium, large or any custom size.
 
 ### Keeps up with you
 The glow is placed where your cursor is heading, so it stays on the cursor during fast movement. It also copes cleanly with alt-tabbing and loading screens.
@@ -58,8 +58,8 @@ Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > 
 
 **Effects tab**
 - **Finding the cursor:** shake to find and how many shakes it takes, pulse in combat and its colour (off by default), pulse when idle (off by default)
-- **Rings:** cast ring and global cooldown ring (off by default), and their colour
 - **Click ripple** (off by default)
+- **Rings:** cast ring and global cooldown ring (off by default), their colour, position (default, finger tip, or custom: drag them in the preview) and size (default, small, medium, large or custom)
 
 The settings page is available in English, German, French, Spanish, Portuguese, Italian, Russian, Korean and Chinese. Spotted an awkward translation? Please open an issue, or suggest a fix to `Locales.lua`.
 

@@ -98,6 +98,10 @@ ns.defaults = {
 	gcdRing = false,
 	ringUseGlowColor = true,
 	ringColor = {1, 1, 1},
+	ringPosition = "default", -- a RING_POSITIONS key, or "custom" (ringOffset)
+	ringOffset = {0, 0}, -- custom position: from the middle of the cursor, in cursor sizes
+	ringSize = "default", -- a RING_SIZES key, or "custom" (ringScale)
+	ringScale = 1,
 	clickRipple = false,
 	prediction = 1,
 }

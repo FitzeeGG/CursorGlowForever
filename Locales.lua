@@ -87,6 +87,19 @@ if locale == "deDE" then
 		["Click ripple"] = "Klickwelle",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "Wo du klickst, breitet sich ein Ring aus und verblasst, damit du jeden Klick siehst.",
 		["Reset all settings in the profile %s to their defaults?"] = "Alle Einstellungen im Profil %s auf die Standardwerte zurücksetzen?",
+		["Ring position"] = "Ringposition",
+		["Where the rings sit: around the cursor, on its finger tip, or wherever you place them."] = "Wo die Ringe sitzen: um den Mauszeiger, an seiner Fingerspitze oder dort, wo du sie platzierst.",
+		["Finger tip"] = "Fingerspitze",
+		["Custom"] = "Eigene",
+		["Click or drag in the preview at the top to place the ring. Right-click the preview to centre it again."] = "Klicke oder ziehe in der Vorschau oben, um den Ring zu platzieren. Rechtsklick auf die Vorschau zentriert ihn wieder.",
+		["Ring size"] = "Ringgröße",
+		["How big the rings are: sized around the cursor by default, or smaller or larger."] = "Wie groß die Ringe sind: standardmäßig um den Mauszeiger bemessen, oder kleiner oder größer.",
+		["Small"] = "Klein",
+		["Medium"] = "Mittel",
+		["Large"] = "Groß",
+		["Custom ring size"] = "Eigene Ringgröße",
+		["How big the rings are, compared with the default size."] = "Wie groß die Ringe sind, verglichen mit der Standardgröße.",
+		["Drag to place the ring"] = "Ziehen, um den Ring zu platzieren",
 	}
 elseif locale == "frFR" then
 	translations = {
@@ -166,6 +179,19 @@ elseif locale == "frFR" then
 		["Click ripple"] = "Onde au clic",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "Un anneau s'étend et s'estompe là où vous cliquez, pour voir chaque clic.",
 		["Reset all settings in the profile %s to their defaults?"] = "Réinitialiser tous les réglages du profil %s à leurs valeurs par défaut ?",
+		["Ring position"] = "Position des anneaux",
+		["Where the rings sit: around the cursor, on its finger tip, or wherever you place them."] = "Où se placent les anneaux : autour du curseur, au bout de son doigt, ou là où vous les placez.",
+		["Finger tip"] = "Bout du doigt",
+		["Custom"] = "Personnalisée",
+		["Click or drag in the preview at the top to place the ring. Right-click the preview to centre it again."] = "Cliquez ou faites glisser dans l'aperçu en haut pour placer l'anneau. Clic droit sur l'aperçu pour le recentrer.",
+		["Ring size"] = "Taille des anneaux",
+		["How big the rings are: sized around the cursor by default, or smaller or larger."] = "Taille des anneaux : autour du curseur par défaut, ou plus petits ou plus grands.",
+		["Small"] = "Petite",
+		["Medium"] = "Moyenne",
+		["Large"] = "Grande",
+		["Custom ring size"] = "Taille personnalisée",
+		["How big the rings are, compared with the default size."] = "Taille des anneaux par rapport à la taille par défaut.",
+		["Drag to place the ring"] = "Faites glisser pour placer l'anneau",
 	}
 elseif locale == "esES" or locale == "esMX" then
 	translations = {
@@ -245,6 +271,19 @@ elseif locale == "esES" or locale == "esMX" then
 		["Click ripple"] = "Onda al hacer clic",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "Un anillo se expande y se desvanece donde haces clic, para que veas cada clic.",
 		["Reset all settings in the profile %s to their defaults?"] = "¿Restablecer todos los ajustes del perfil %s a sus valores predeterminados?",
+		["Ring position"] = "Posición de los anillos",
+		["Where the rings sit: around the cursor, on its finger tip, or wherever you place them."] = "Dónde se colocan los anillos: alrededor del cursor, en la punta de su dedo o donde tú los pongas.",
+		["Finger tip"] = "Punta del dedo",
+		["Custom"] = "Personalizada",
+		["Click or drag in the preview at the top to place the ring. Right-click the preview to centre it again."] = "Haz clic o arrastra en la vista previa de arriba para colocar el anillo. Clic derecho en la vista previa para centrarlo de nuevo.",
+		["Ring size"] = "Tamaño de los anillos",
+		["How big the rings are: sized around the cursor by default, or smaller or larger."] = "Tamaño de los anillos: alrededor del cursor por defecto, o más pequeños o más grandes.",
+		["Small"] = "Pequeño",
+		["Medium"] = "Mediano",
+		["Large"] = "Grande",
+		["Custom ring size"] = "Tamaño personalizado",
+		["How big the rings are, compared with the default size."] = "Tamaño de los anillos comparado con el tamaño predeterminado.",
+		["Drag to place the ring"] = "Arrastra para colocar el anillo",
 	}
 elseif locale == "ptBR" then
 	translations = {
@@ -324,6 +363,19 @@ elseif locale == "ptBR" then
 		["Click ripple"] = "Onda ao clicar",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "Um anel se espalha e some onde você clica, para você ver cada clique.",
 		["Reset all settings in the profile %s to their defaults?"] = "Restaurar todas as configurações do perfil %s para o padrão?",
+		["Ring position"] = "Posição dos anéis",
+		["Where the rings sit: around the cursor, on its finger tip, or wherever you place them."] = "Onde os anéis ficam: em volta do cursor, na ponta do dedo dele ou onde você os colocar.",
+		["Finger tip"] = "Ponta do dedo",
+		["Custom"] = "Personalizada",
+		["Click or drag in the preview at the top to place the ring. Right-click the preview to centre it again."] = "Clique ou arraste na prévia acima para posicionar o anel. Clique com o botão direito na prévia para centralizá-lo de novo.",
+		["Ring size"] = "Tamanho dos anéis",
+		["How big the rings are: sized around the cursor by default, or smaller or larger."] = "Tamanho dos anéis: em volta do cursor por padrão, ou menores ou maiores.",
+		["Small"] = "Pequeno",
+		["Medium"] = "Médio",
+		["Large"] = "Grande",
+		["Custom ring size"] = "Tamanho personalizado",
+		["How big the rings are, compared with the default size."] = "Tamanho dos anéis comparado com o tamanho padrão.",
+		["Drag to place the ring"] = "Arraste para posicionar o anel",
 	}
 elseif locale == "itIT" then
 	translations = {
@@ -403,6 +455,19 @@ elseif locale == "itIT" then
 		["Click ripple"] = "Onda al clic",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "Un anello si allarga e svanisce dove clicchi, così vedi ogni clic.",
 		["Reset all settings in the profile %s to their defaults?"] = "Ripristinare tutte le impostazioni del profilo %s ai valori predefiniti?",
+		["Ring position"] = "Posizione degli anelli",
+		["Where the rings sit: around the cursor, on its finger tip, or wherever you place them."] = "Dove stanno gli anelli: attorno al cursore, sulla punta del dito o dove li metti tu.",
+		["Finger tip"] = "Punta del dito",
+		["Custom"] = "Personalizzata",
+		["Click or drag in the preview at the top to place the ring. Right-click the preview to centre it again."] = "Fai clic o trascina nell'anteprima in alto per posizionare l'anello. Clic destro sull'anteprima per centrarlo di nuovo.",
+		["Ring size"] = "Dimensione degli anelli",
+		["How big the rings are: sized around the cursor by default, or smaller or larger."] = "Quanto sono grandi gli anelli: attorno al cursore per impostazione predefinita, oppure più piccoli o più grandi.",
+		["Small"] = "Piccola",
+		["Medium"] = "Media",
+		["Large"] = "Grande",
+		["Custom ring size"] = "Dimensione personalizzata",
+		["How big the rings are, compared with the default size."] = "Quanto sono grandi gli anelli rispetto alla dimensione predefinita.",
+		["Drag to place the ring"] = "Trascina per posizionare l'anello",
 	}
 elseif locale == "ruRU" then
 	translations = {
@@ -482,6 +547,19 @@ elseif locale == "ruRU" then
 		["Click ripple"] = "Волна при щелчке",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "В месте щелчка расходится и гаснет кольцо, чтобы был виден каждый щелчок.",
 		["Reset all settings in the profile %s to their defaults?"] = "Сбросить все настройки профиля %s на значения по умолчанию?",
+		["Ring position"] = "Положение колец",
+		["Where the rings sit: around the cursor, on its finger tip, or wherever you place them."] = "Где находятся кольца: вокруг курсора, на кончике его пальца или там, где вы их разместите.",
+		["Finger tip"] = "Кончик пальца",
+		["Custom"] = "Свое",
+		["Click or drag in the preview at the top to place the ring. Right-click the preview to centre it again."] = "Щелкните или перетащите в предпросмотре сверху, чтобы разместить кольцо. Щелчок правой кнопкой по предпросмотру вернет его в центр.",
+		["Ring size"] = "Размер колец",
+		["How big the rings are: sized around the cursor by default, or smaller or larger."] = "Размер колец: по умолчанию вокруг курсора, либо меньше или больше.",
+		["Small"] = "Маленький",
+		["Medium"] = "Средний",
+		["Large"] = "Большой",
+		["Custom ring size"] = "Свой размер колец",
+		["How big the rings are, compared with the default size."] = "Размер колец по сравнению с размером по умолчанию.",
+		["Drag to place the ring"] = "Перетащите, чтобы разместить кольцо",
 	}
 elseif locale == "koKR" then
 	translations = {
@@ -561,6 +639,19 @@ elseif locale == "koKR" then
 		["Click ripple"] = "클릭 파동",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "클릭한 자리에서 고리가 퍼지며 사라져 클릭할 때마다 확인할 수 있습니다.",
 		["Reset all settings in the profile %s to their defaults?"] = "%s 프로필의 모든 설정을 기본값으로 초기화할까요?",
+		["Ring position"] = "고리 위치",
+		["Where the rings sit: around the cursor, on its finger tip, or wherever you place them."] = "고리가 놓이는 곳: 커서 주위, 커서의 손가락 끝, 또는 원하는 곳.",
+		["Finger tip"] = "손가락 끝",
+		["Custom"] = "사용자 지정",
+		["Click or drag in the preview at the top to place the ring. Right-click the preview to centre it again."] = "위쪽 미리보기에서 클릭하거나 끌어서 고리를 놓으세요. 미리보기를 오른쪽 클릭하면 다시 가운데로 옵니다.",
+		["Ring size"] = "고리 크기",
+		["How big the rings are: sized around the cursor by default, or smaller or larger."] = "고리의 크기: 기본은 커서 주위에 맞춘 크기이며, 더 작거나 크게 할 수 있습니다.",
+		["Small"] = "작게",
+		["Medium"] = "보통",
+		["Large"] = "크게",
+		["Custom ring size"] = "사용자 지정 고리 크기",
+		["How big the rings are, compared with the default size."] = "기본 크기와 비교한 고리의 크기입니다.",
+		["Drag to place the ring"] = "끌어서 고리 놓기",
 	}
 elseif locale == "zhCN" then
 	translations = {
@@ -640,6 +731,19 @@ elseif locale == "zhCN" then
 		["Click ripple"] = "点击波纹",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "在你点击的位置扩散出一个逐渐消失的圆环，让每次点击都清晰可见。",
 		["Reset all settings in the profile %s to their defaults?"] = "将配置文件%s的所有设置恢复为默认值？",
+		["Ring position"] = "圆环位置",
+		["Where the rings sit: around the cursor, on its finger tip, or wherever you place them."] = "圆环的位置：围绕指针、在指针的指尖，或放在你指定的地方。",
+		["Finger tip"] = "指尖",
+		["Custom"] = "自定义",
+		["Click or drag in the preview at the top to place the ring. Right-click the preview to centre it again."] = "在上方的预览中点击或拖动来放置圆环。右键点击预览可让它重新居中。",
+		["Ring size"] = "圆环大小",
+		["How big the rings are: sized around the cursor by default, or smaller or larger."] = "圆环的大小：默认围绕指针，也可以更小或更大。",
+		["Small"] = "小",
+		["Medium"] = "中",
+		["Large"] = "大",
+		["Custom ring size"] = "自定义圆环大小",
+		["How big the rings are, compared with the default size."] = "圆环相对于默认大小的比例。",
+		["Drag to place the ring"] = "拖动以放置圆环",
 	}
 elseif locale == "zhTW" then
 	translations = {
@@ -719,6 +823,19 @@ elseif locale == "zhTW" then
 		["Click ripple"] = "點擊波紋",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "在你點擊的位置擴散出一個逐漸消失的圓環，讓每次點擊都清楚可見。",
 		["Reset all settings in the profile %s to their defaults?"] = "將設定檔%s的所有設定恢復為預設值？",
+		["Ring position"] = "圓環位置",
+		["Where the rings sit: around the cursor, on its finger tip, or wherever you place them."] = "圓環的位置：圍繞游標、在游標的指尖，或放在你指定的地方。",
+		["Finger tip"] = "指尖",
+		["Custom"] = "自訂",
+		["Click or drag in the preview at the top to place the ring. Right-click the preview to centre it again."] = "在上方的預覽中點擊或拖曳來放置圓環。右鍵點擊預覽可讓它重新置中。",
+		["Ring size"] = "圓環大小",
+		["How big the rings are: sized around the cursor by default, or smaller or larger."] = "圓環的大小：預設圍繞游標，也可以更小或更大。",
+		["Small"] = "小",
+		["Medium"] = "中",
+		["Large"] = "大",
+		["Custom ring size"] = "自訂圓環大小",
+		["How big the rings are, compared with the default size."] = "圓環相對於預設大小的比例。",
+		["Drag to place the ring"] = "拖曳以放置圓環",
 	}
 end
 

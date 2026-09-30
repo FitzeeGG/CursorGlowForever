@@ -207,15 +207,56 @@ local function createPreview()
 		box.samples[i] = sample
 	end
 
+	-- a custom ring position is placed on the preview's cursor
+	box.hint = createLabel(box, L["Drag to place the ring"], "GameFontHighlightSmall")
+	box.hint:SetPoint("TOP", box, "TOP", 0, -5)
+	box:SetScript("OnMouseDown", function(self, button)
+		if ns.db.ringPosition ~= "custom" then return end
+		if button == "RightButton" then
+			ns.setRingOffset(0, 0)
+			onChanged()
+		else
+			self.dragging = true
+		end
+	end)
+	box:SetScript("OnMouseUp", function(self)
+		if not self.dragging then return end
+		self.dragging = false
+		onChanged()
+	end)
+
+	local function layoutRings(sample)
+		ns.layoutRings(sample.rings, sample.size)
+		-- while placing them, the rings show clearly even without a cast
+		if ns.db.ringPosition == "custom" then
+			for _, ring in pairs(sample.rings) do ring.track:SetAlpha(.6) end
+			sample.rings.cast.track:Show()
+		end
+	end
+	box.layoutRings = layoutRings
+
 	-- the demo cast restarts every few seconds while the preview shows
 	box.lastDemo = -DEMO_EVERY
 	box:SetScript("OnUpdate", function(self)
 		local now, db = GetTime(), ns.db
-		if now - self.lastDemo < DEMO_EVERY then return end
-		self.lastDemo = now
-		for _, sample in ipairs(self.samples) do
-			if db.castRing then ns.startRing(sample.rings.cast, now, DEMO_CAST, false) else ns.stopRing(sample.rings.cast) end
-			if db.gcdRing then ns.startRing(sample.rings.gcd, now, DEMO_GCD, false) else ns.stopRing(sample.rings.gcd) end
+		if self.dragging then
+			local sample = self.samples[1]
+			local x, y = sample:GetCenter()
+			local scale = self:GetEffectiveScale()
+			local mouseX, mouseY = GetCursorPosition()
+			if x and sample.size and sample.size > 0 then
+				ns.setRingOffset((mouseX / scale - x) / sample.size, (mouseY / scale - y) / sample.size)
+				ns.updateRings()
+				for _, each in ipairs(self.samples) do layoutRings(each) end
+			end
+		end
+		if now - self.lastDemo >= DEMO_EVERY then
+			self.lastDemo = now
+			for _, sample in ipairs(self.samples) do
+				if db.castRing then ns.startRing(sample.rings.cast, now, DEMO_CAST, false) else ns.stopRing(sample.rings.cast) end
+				if db.gcdRing then ns.startRing(sample.rings.gcd, now, DEMO_GCD, false) else ns.stopRing(sample.rings.gcd) end
+				layoutRings(sample)
+			end
 		end
 	end)
 
@@ -243,12 +284,16 @@ local function createPreview()
 			else
 				sample.glove:SetVertexColor(1, 1, 1)
 			end
-			ns.layoutRings(sample.rings, size)
+			sample.size = size
+			layoutRings(sample)
 			-- the game draws no glove while turning without the option
 			sample:SetShown(not sample.turning or db.gloveWhileTurning)
 		end
 		-- restart the demo so a ring just switched on shows straight away
 		self.lastDemo = -DEMO_EVERY
+		local placing = db.ringPosition == "custom"
+		self:EnableMouse(placing)
+		self.hint:SetShown(placing)
 		self:SetAlpha(db.enabled and 1 or .4)
 	end
 	table.insert(widgets, box)
@@ -547,9 +592,13 @@ local function buildEffectsPage(page)
 	idlePulse:SetPoint("TOPLEFT", pulseSwatch, "BOTTOMLEFT", -4, -16)
 
 	-- right column
+	local clickRipple = createCheckbox("clickRipple", L["Click ripple"],
+		L["A ring spreads out and fades where you click, so you can see each click land."])
+	clickRipple:SetPoint("TOPLEFT", shakeToFind, "TOPLEFT", RIGHT_COLUMN, 0)
+
 	local castRing = createCheckbox("castRing", L["Cast ring"],
 		L["A ring around the cursor fills up while you cast, and drains while you channel."])
-	castRing:SetPoint("TOPLEFT", shakeToFind, "TOPLEFT", RIGHT_COLUMN, 0)
+	castRing:SetPoint("TOPLEFT", clickRipple, "BOTTOMLEFT", 0, -16)
 
 	local gcdRing = createCheckbox("gcdRing", L["Global cooldown ring"],
 		L["A second, smaller ring fills up over the global cooldown."])
@@ -561,11 +610,40 @@ local function buildEffectsPage(page)
 	local ringSwatch = createColorSwatch("ringColor", L["Ring colour"], "ringUseGlowColor")
 	ringSwatch:SetPoint("TOPLEFT", ringGlowColor, "BOTTOMLEFT", 4, -6)
 
-	local clickRipple = createCheckbox("clickRipple", L["Click ripple"],
-		L["A ring spreads out and fades where you click, so you can see each click land."])
-	clickRipple:SetPoint("TOPLEFT", ringSwatch, "BOTTOMLEFT", -4, -16)
+	-- where the rings sit and how big they are
+	local ringPosition = createSlider("ringPosition", L["Ring position"], nil, nil, nil, nil,
+		{{"default", L["Default"]}, {"fingertip", L["Finger tip"]}, {"custom", L["Custom"]}},
+		L["Where the rings sit: around the cursor, on its finger tip, or wherever you place them."])
+	ringPosition:SetPoint("TOPLEFT", ringSwatch, "BOTTOMLEFT", 0, -38)
 
-	page.lowest = {idlePulse, clickRipple}
+	local placeHint = createLabel(parent, L["Click or drag in the preview at the top to place the ring. Right-click the preview to centre it again."], "GameFontHighlightSmall")
+	placeHint:SetPoint("TOPLEFT", ringPosition, "BOTTOMLEFT", 0, -12)
+	placeHint:SetWidth(250)
+	placeHint:SetJustifyH("LEFT")
+
+	local ringSize = createSlider("ringSize", L["Ring size"], nil, nil, nil, nil,
+		{{"default", L["Default"]}, {"small", L["Small"]}, {"medium", L["Medium"]}, {"large", L["Large"]}, {"custom", L["Custom"]}},
+		L["How big the rings are: sized around the cursor by default, or smaller or larger."])
+
+	local ringScale = createSlider("ringScale", L["Custom ring size"], .4, 3, .05, "%.2fx", nil,
+		L["How big the rings are, compared with the default size."])
+	ringScale:SetPoint("TOPLEFT", ringSize, "BOTTOMLEFT", 0, -34)
+
+	-- the placing hint and the custom size slider only show when they apply
+	function placeHint:refresh()
+		local custom = ns.db.ringPosition == "custom"
+		self:SetShown(custom)
+		ringSize:ClearAllPoints()
+		if custom then
+			ringSize:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, -30)
+		else
+			ringSize:SetPoint("TOPLEFT", ringPosition, "BOTTOMLEFT", 0, -34)
+		end
+		ringScale:SetShown(ns.db.ringSize == "custom")
+	end
+	table.insert(widgets, placeHint)
+
+	page.lowest = {idlePulse, ringScale}
 end
 
 
