@@ -134,18 +134,45 @@ end
 local function showGlobalCooldown(start, duration, source)
 	if start == rings.gcd.start then return end
 	startRing(rings.gcd, start, duration, false)
+	rings.gcd.duration = duration
 	ns.debugPrint("global cooldown", duration, "from", source)
 end
 
 
--- Secret values (the client can hide them from addons) can't be read or
--- compared, but a cooldown frame can still show them.
-local function showSecretGlobalCooldown(start, duration, source)
-	rings.gcd:SetReverse(true) -- fills up, as startRing does
-	if not pcall(rings.gcd.SetCooldown, rings.gcd, start, duration) then return false end
-	rings.gcd.start = nil
-	rings.gcd.track:Hide()
-	ns.debugPrint("global cooldown (hidden values) from", source)
+-- Classic's global cooldown doesn't change with haste: 1 second for rogues
+-- and druids in cat form, else 1.5.
+local CAT_FORM = 1
+local function getGlobalCooldownLength()
+	local class = select(2, UnitClass("player"))
+	if class == "ROGUE" then return 1 end
+	if class == "DRUID" and GetShapeshiftFormID and GetShapeshiftFormID() == CAT_FORM then return 1 end
+	return 1.5
+end
+
+
+-- Hidden cooldowns (secret values) can't be read, but the client still says
+-- whether the global cooldown is running. It is shown through the client's
+-- duration object where it has one, else timed from now.
+local function showHiddenGlobalCooldown(spellID, source)
+	local ring, now = rings.gcd, GetTime()
+	if ring.start and ring.duration and now < ring.start + ring.duration - .1 then return true end
+	local getDuration = C_Spell and C_Spell.GetSpellCooldownDuration
+	if getDuration and ring.SetCooldownFromDurationObject then
+		local ok, durationObject = pcall(getDuration, spellID)
+		if ok and durationObject then
+			ring:SetReverse(true) -- fills up, as startRing does
+			if pcall(ring.SetCooldownFromDurationObject, ring, durationObject) then
+				ring.start, ring.duration = now, getGlobalCooldownLength()
+				ring.track:Show()
+				ns.debugPrint("global cooldown (hidden) shown by the client, from", source)
+				return true
+			end
+		end
+	end
+	local duration = getGlobalCooldownLength()
+	startRing(ring, now, duration, false)
+	ring.duration = duration
+	ns.debugPrint("global cooldown (hidden)", duration, "timed from now, from", source)
 	return true
 end
 
@@ -167,7 +194,7 @@ function ns.updateGCDRing(spellID)
 	table.insert(report, GCD_SPELL..": "..describe(start).." / "..describe(duration))
 	if ok and start and duration then
 		if isSecret(start) or isSecret(duration) then
-			if showSecretGlobalCooldown(start, duration, "the global cooldown spell") then return end
+			return showHiddenGlobalCooldown(GCD_SPELL, "the global cooldown spell")
 		elseif duration > 0 and duration <= GCD_LONGEST then
 			return showGlobalCooldown(start, duration, "the global cooldown spell")
 		end
@@ -181,9 +208,9 @@ function ns.updateGCDRing(spellID)
 			if ok and start and duration then
 				if isSecret(start) or isSecret(duration) then
 					-- only the client's own word can tell it is the global cooldown
-					if onGCD == true and showSecretGlobalCooldown(start, duration, "spell "..candidate) then
+					if not isSecret(onGCD) and onGCD == true then
 						referenceSpell = candidate
-						return
+						return showHiddenGlobalCooldown(candidate, "spell "..candidate)
 					end
 				elseif duration > 0 and duration <= GCD_LONGEST then
 					referenceSpell = candidate
