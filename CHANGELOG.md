@@ -10,6 +10,7 @@
 - New "Click ripple" (off by default): a ring spreads out and fades where you click.
 - Profiles: settings now live in named profiles that all your characters share, and each character remembers which one it uses. Create a profile from a copy of the current settings, switch between them, copy settings from another profile, or delete one. Your current settings become the Default profile, and a character that had its own settings gets a profile named after it.
 - The settings page is split into two tabs, Cursor and Effects, under the live preview.
+- Fixed: dragging a settings slider could make the game stutter.
 
 ## 1.0.2
 
