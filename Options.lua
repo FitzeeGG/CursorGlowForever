@@ -650,5 +650,13 @@ SlashCmdList.CURSORGLOWFOREVER = function(msg)
 			..(ns.worldEvent and "" or " (WORLD_CURSOR_TOOLTIP_UPDATE not available, using tooltips)"))
 		return
 	end
+	if msg and msg:lower():match("^%s*test%s*$") then
+		-- both rings on the real cursor, whatever the settings, to see that they draw
+		local now = GetTime()
+		ns.startRing(ns.rings.cast, now, 3, false)
+		ns.startRing(ns.rings.gcd, now, 1.5, false)
+		print("|cff66ccffCursor Glow Forever:|r test rings: a 3 second cast ring and a 1.5 second global cooldown ring")
+		return
+	end
 	Settings.OpenToCategory(category:GetID())
 end
