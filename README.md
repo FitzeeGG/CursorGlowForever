@@ -67,6 +67,7 @@ The settings page is available in English, German, French, Spanish, Portuguese, 
 
 - `/cg` or `/cursorglow`: open the settings
 - `/cg debug`: show what the addon sees, for bug reports
+- `/cg test`: run the cast and global cooldown rings on your cursor for a few seconds
 
 ## Good to know
 
