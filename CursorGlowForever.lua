@@ -189,15 +189,20 @@ local function setMode(mode)
 end
 
 
--- UI units per physical screen pixel
+-- UI units per physical screen pixel. Asking for the window sizes is slow,
+-- so it is worked out once and again only when the UI scale or the display
+-- changes (not on every settings change, like dragging a slider).
+local pixelScale
 local function getPixelScale()
+	if pixelScale then return pixelScale end
 	local width
 	if GetCVarBool("gxMaximize") and C_VideoOptions and C_VideoOptions.GetGameWindowSizes then
 		local sizes = C_VideoOptions.GetGameWindowSizes(GetCVar("gxMonitor"), true)
 		width = sizes and sizes[1] and sizes[1].x
 	end
 	width = width or GetPhysicalScreenSize()
-	return WorldFrame:GetWidth() / width / UIParent:GetScale()
+	pixelScale = WorldFrame:GetWidth() / width / UIParent:GetScale()
+	return pixelScale
 end
 
 
@@ -296,7 +301,8 @@ function ns.updateLayout()
 	local sizeIndex = getCursorSizeIndex()
 	local size = CURSOR_SIZES[sizeIndex] * getPixelScale()
 	local unit = size / 32
-	local r, g, b = ns.getColor()
+	-- the hover outline's pieces only move when the size changes
+	local resized = size ~= cursor.size or sizeIndex ~= cursor.sizeIndex
 	cursor:SetSize(size, size)
 	cursor.sizeIndex, cursor.size = sizeIndex, size
 
@@ -315,16 +321,18 @@ function ns.updateLayout()
 	local softDiameter = SOFT_DIAMETER * unit * (1 + ns.getGlowSize()) / 2
 	cursor.hover.soft:SetSize(softDiameter, softDiameter)
 	cursor.hover.soft:SetPoint("CENTER", cursor, "CENTER")
-	for _, texture in ipairs(cursor.hover.copies) do
-		texture:SetSize(size, size)
-		texture:ClearAllPoints()
-		texture:SetPoint("TOPLEFT", cursor, "TOPLEFT",
-			math.cos(texture.angle) * texture.ring.radius * unit, -math.sin(texture.angle) * texture.ring.radius * unit)
+	if resized then
+		for _, texture in ipairs(cursor.hover.copies) do
+			texture:SetSize(size, size)
+			texture:ClearAllPoints()
+			texture:SetPoint("TOPLEFT", cursor, "TOPLEFT",
+				math.cos(texture.angle) * texture.ring.radius * unit, -math.sin(texture.angle) * texture.ring.radius * unit)
+		end
 	end
 
 	cursor.glove:SetVertexColor(ns.getGloveColor())
 	ns.updateColor()
-	ns.refreshHoverArt(true)
+	ns.refreshHoverArt(resized)
 	ns.updateOpacity()
 	if ns.updateRings then ns.updateRings() end
 end
@@ -1348,7 +1356,10 @@ events.QUEST_PROGRESS = events.QUEST_DETAIL
 events.QUEST_COMPLETE = events.QUEST_DETAIL
 
 
-function events:UI_SCALE_CHANGED() ns.updateLayout() end
+function events:UI_SCALE_CHANGED()
+	pixelScale = nil
+	ns.updateLayout()
+end
 events.DISPLAY_SIZE_CHANGED = events.UI_SCALE_CHANGED
 events.CVAR_UPDATE = events.UI_SCALE_CHANGED
 function events:PLAYER_STARTED_LOOKING() state.looking = true end
