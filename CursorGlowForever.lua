@@ -277,9 +277,8 @@ function ns.updateColor(pulseTint, haloTint)
 	local r, g, b = ns.getColor()
 	local pr, pg, pb = r, g, b
 	if not db.pulseUseGlowColor then pr, pg, pb = unpack(db.pulseColor) end
-	local function mix(t) return r + (pr - r) * t, g + (pg - g) * t, b + (pb - b) * t end
-	cursor.halo:SetVertexColor(mix(haloTint))
-	r, g, b = mix(pulseTint)
+	cursor.halo:SetVertexColor(r + (pr - r) * haloTint, g + (pg - g) * haloTint, b + (pb - b) * haloTint)
+	r, g, b = r + (pr - r) * pulseTint, g + (pg - g) * pulseTint, b + (pb - b) * pulseTint
 	cursor.glow:SetVertexColor(r, g, b)
 	cursor.outline:SetVertexColor(r, g, b)
 	cursor.hover.soft:SetVertexColor(r, g, b)
@@ -511,14 +510,28 @@ end
 -- same shape. Tooltip text is only read while the tooltip is up.
 -- NPC ID from a unit's GUID (Creature-0-server-instance-zone-npcID-spawn);
 -- the GUID can be secret, hence the pcall
-local function getNPCID(unit)
-	local ok, npcID = pcall(function()
-		local guid = UnitGUID(unit)
-		if not guid then return end
+-- the last GUID read is kept, so hovering an NPC doesn't split it again
+local lastGUID, lastNPCID
+local function readNPCID(unit)
+	local guid = UnitGUID(unit)
+	if not guid then return end
+	if guid ~= lastGUID then
 		local kind, _, _, _, _, id = strsplit("-", guid)
-		if kind == "Creature" or kind == "Vehicle" then return id end
-	end)
+		lastGUID, lastNPCID = guid, (kind == "Creature" or kind == "Vehicle") and id or nil
+	end
+	return lastNPCID
+end
+
+
+local function getNPCID(unit)
+	local ok, npcID = pcall(readNPCID, unit)
 	return ok and npcID or nil
+end
+
+
+-- within one of the game's distance checks of the mouseover unit
+function ns.readInteractDistance(index)
+	return CheckInteractDistance("mouseover", index) and true or false
 end
 
 
@@ -638,10 +651,13 @@ ns.debugPrint = debug
 
 -- fallback when WORLD_CURSOR_TOOLTIP_UPDATE is missing: world objects show a
 -- UIParent-owned tooltip (its owner can be secret, hence the pcall)
+local function readWorldTooltipShown()
+	return GameTooltip:IsShown() and GameTooltip:GetOwner() == UIParent and GameTooltip:GetAlpha() >= 1
+end
+
+
 local function isWorldTooltipShown()
-	local ok, shown = pcall(function()
-		return GameTooltip:IsShown() and GameTooltip:GetOwner() == UIParent and GameTooltip:GetAlpha() >= 1
-	end)
+	local ok, shown = pcall(readWorldTooltipShown)
 	return ok and shown or false
 end
 
@@ -662,13 +678,16 @@ end
 
 
 -- the unit's name, or the object's from its tooltip (names can be secret)
+local function readMouseoverName()
+	local unitName = UnitName("mouseover")
+	if issecretvalue and issecretvalue(unitName) then return nil end
+	return unitName
+end
+
+
 local function getTargetName()
 	if UnitExists("mouseover") then
-		local ok, name = pcall(function()
-			local unitName = UnitName("mouseover")
-			if issecretvalue and issecretvalue(unitName) then return nil end
-			return unitName
-		end)
+		local ok, name = pcall(readMouseoverName)
 		return ok and name or nil
 	end
 	return getLineText(1)
@@ -709,7 +728,7 @@ local function reachTarget(signal)
 	-- starting state, so they are never dimmed.
 	ns.hoverInRange = nil
 	if UnitExists("mouseover") and CheckInteractDistance then
-		local ok, inRange = pcall(function() return CheckInteractDistance("mouseover", 3) and true or false end)
+		local ok, inRange = pcall(ns.readInteractDistance, 3)
 		if ok then ns.hoverInRange = inRange end
 	end
 	ns.refreshHoverArt()
@@ -748,12 +767,15 @@ end
 
 
 -- the player or the mouseover unit is moving (unit speeds can be secret)
+local function readMoving()
+	if (GetUnitSpeed("player") or 0) > 0 then return true end
+	return UnitExists("mouseover") and (GetUnitSpeed("mouseover") or 0) > 0
+end
+
+
 local function isDistanceChanging()
 	if not GetUnitSpeed then return false end
-	local ok, moving = pcall(function()
-		if (GetUnitSpeed("player") or 0) > 0 then return true end
-		return UnitExists("mouseover") and (GetUnitSpeed("mouseover") or 0) > 0
-	end)
+	local ok, moving = pcall(readMoving)
 	return ok and moving or false
 end
 
@@ -764,7 +786,7 @@ end
 -- cursor. True when it can't be told, so a change is then read as a range swap.
 local function checkDistance(index)
 	if not (UnitExists("mouseover") and CheckInteractDistance) then return nil end
-	local ok, within = pcall(function() return CheckInteractDistance("mouseover", index) and true or false end)
+	local ok, within = pcall(ns.readInteractDistance, index)
 	if ok then return within end
 end
 

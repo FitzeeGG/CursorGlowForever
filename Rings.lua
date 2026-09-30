@@ -219,13 +219,35 @@ end
 local lastSpell, referenceSpell
 
 
+-- whether a spell's cooldown is the global one: shows it and returns true
+local function tryGlobalCooldown(spellID, report)
+	local ok, start, duration, onGCD = pcall(getSpellCooldown, spellID)
+	if report then
+		table.insert(report, spellID..": "..describe(start).." / "..describe(duration).." on global cooldown: "..describe(onGCD))
+	end
+	if not (ok and start and duration) then return false end
+	if isSecret(start) or isSecret(duration) then
+		-- only the client's own word can tell it is the global cooldown
+		if not isSecret(onGCD) and onGCD == true then
+			referenceSpell = spellID
+			return showHiddenGlobalCooldown(spellID, "spell "..spellID)
+		end
+	elseif duration > 0 and duration <= GCD_LONGEST then
+		referenceSpell = spellID
+		showGlobalCooldown(start, duration, "spell "..spellID)
+		return true
+	end
+	return false
+end
+
+
 function ns.updateGCDRing(spellID)
 	if not ns.db.gcdRing then return stopRing(rings.gcd) end
 	lastSpell = spellID or lastSpell
-	local report = {}
+	local report = ns.debug and spellID and {} or nil
 
 	local ok, start, duration = pcall(getSpellCooldown, GCD_SPELL)
-	table.insert(report, GCD_SPELL..": "..describe(start).." / "..describe(duration))
+	if report then table.insert(report, GCD_SPELL..": "..describe(start).." / "..describe(duration)) end
 	if ok and start and duration then
 		if isSecret(start) or isSecret(duration) then
 			return showHiddenGlobalCooldown(GCD_SPELL, "the global cooldown spell")
@@ -234,26 +256,9 @@ function ns.updateGCDRing(spellID)
 		end
 	end
 
-	for _, candidate in ipairs({referenceSpell or false, lastSpell ~= referenceSpell and lastSpell or false}) do
-		if candidate then
-			local onGCD
-			ok, start, duration, onGCD = pcall(getSpellCooldown, candidate)
-			table.insert(report, candidate..": "..describe(start).." / "..describe(duration).." on global cooldown: "..describe(onGCD))
-			if ok and start and duration then
-				if isSecret(start) or isSecret(duration) then
-					-- only the client's own word can tell it is the global cooldown
-					if not isSecret(onGCD) and onGCD == true then
-						referenceSpell = candidate
-						return showHiddenGlobalCooldown(candidate, "spell "..candidate)
-					end
-				elseif duration > 0 and duration <= GCD_LONGEST then
-					referenceSpell = candidate
-					return showGlobalCooldown(start, duration, "spell "..candidate)
-				end
-			end
-		end
-	end
-	if spellID then ns.debugPrint("no global cooldown found for spell", spellID, "|", table.concat(report, " | ")) end
+	if referenceSpell and tryGlobalCooldown(referenceSpell, report) then return end
+	if lastSpell and lastSpell ~= referenceSpell and tryGlobalCooldown(lastSpell, report) then return end
+	if report then ns.debugPrint("no global cooldown found for spell", spellID, "|", table.concat(report, " | ")) end
 end
 
 
@@ -341,7 +346,8 @@ local wasDown = {}
 local watcher = CreateFrame("Frame")
 watcher:SetScript("OnUpdate", function()
 	local db = ns.db
-	local on = db and db.enabled and db.clickRipple and ns.isShowModeActive()
+	if not (db and db.enabled and db.clickRipple) then return end
+	local on = ns.isShowModeActive()
 	for _, button in ipairs(RIPPLE_BUTTONS) do
 		local down = IsMouseButtonDown(button) and true or false
 		if on and down and not wasDown[button] then ns.playRipple(GetCursorPosition()) end
