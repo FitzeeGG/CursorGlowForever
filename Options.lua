@@ -428,8 +428,13 @@ local function buildCursorPage(page)
 	profile:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 4, -14)
 
 	-- left column
+	local showWhen = createSlider("showWhen", L["Show the glow"], nil, nil, nil, nil,
+		{{"always", L["Always"]}, {"combat", L["In combat"]}, {"noCombat", L["Out of combat"]}},
+		L["Show the glow always, only in combat, or only out of combat. Shake to find still shows it for a moment."])
+	showWhen:SetPoint("TOPLEFT", profile, "BOTTOMLEFT", 0, -40)
+
 	local classColor = createCheckbox("useClassColor", L["Use class colour"], L["Colour the glow with your class colour. Untick to pick a custom colour."])
-	classColor:SetPoint("TOPLEFT", profile, "BOTTOMLEFT", -4, -22)
+	classColor:SetPoint("TOPLEFT", showWhen, "BOTTOMLEFT", -4, -20)
 	local swatch = createColorSwatch("color", L["Custom colour"], "useClassColor")
 	swatch:SetPoint("TOPLEFT", classColor, "BOTTOMLEFT", 4, -6)
 
@@ -455,25 +460,10 @@ local function buildCursorPage(page)
 		L["Places the glow ahead of the cursor by this many frames of its movement, so it keeps up during fast movement. Lower it if the glow overshoots when you stop."])
 	prediction:SetPoint("TOPLEFT", size, "BOTTOMLEFT", 0, -34)
 
-	local reset = createButton(parent, L["Reset to defaults"], 160)
-	reset:SetPoint("TOPLEFT", prediction, "BOTTOMLEFT", -4, -30)
-	reset:SetScript("OnClick", function()
-		for key, value in pairs(ns.defaults) do
-			ns.db[key] = type(value) == "table" and CopyTable(value) or value
-		end
-		ns.setEnabled(ns.db.enabled)
-		onChanged()
-	end)
-
-	-- right column
-	local showWhen = createSlider("showWhen", L["Show the glow"], nil, nil, nil, nil,
-		{{"always", L["Always"]}, {"combat", L["In combat"]}, {"noCombat", L["Out of combat"]}},
-		L["Show the glow always, only in combat, or only out of combat. Shake to find still shows it for a moment."], 130)
-	showWhen:SetPoint("TOPLEFT", classColor, "TOPLEFT", RIGHT_COLUMN, -20)
-
+	-- right column, level with the top of the left one
 	local hover = createCheckbox("hideOnHover", L["Hide on hover targets"],
 		L["Hide the glove glow while the cursor has a hover look (mailbox, enemy, NPC...)."])
-	hover:SetPoint("TOPLEFT", showWhen, "BOTTOMLEFT", -4, -20)
+	hover:SetPoint("TOPLEFT", showWhen, "TOPLEFT", RIGHT_COLUMN - 8, 20)
 
 	local outlineHover = createCheckbox("outlineHover", L["Outline hover cursors"],
 		L["Outline the hover cursor (loot bag, pickaxe, sword...) when it can be told which one is showing. Unrecognised ones get no outline."])
@@ -509,7 +499,7 @@ local function buildCursorPage(page)
 		L["How much stronger the glow is around the glove drawn while turning the camera."])
 	intensity:SetPoint("TOPLEFT", tint, "BOTTOMLEFT", 0, -34)
 
-	page.lowest = {reset, intensity}
+	page.lowest = {prediction, intensity}
 end
 
 
@@ -603,6 +593,16 @@ local function build()
 		tab:SetScript("OnClick", function() showPage(i) end)
 		tabs[i] = tab
 	end
+	local reset = createButton(panel, L["Reset to defaults"], 140)
+	reset:SetPoint("LEFT", tabs[#tabs], "RIGHT", 12, 0)
+	reset:SetScript("OnClick", function()
+		for key, value in pairs(ns.defaults) do
+			ns.db[key] = type(value) == "table" and CopyTable(value) or value
+		end
+		ns.setEnabled(ns.db.enabled)
+		onChanged()
+	end)
+
 	local line = panel:CreateTexture(nil, "ARTWORK")
 	line:SetColorTexture(1, 1, 1, .15)
 	line:SetHeight(1)

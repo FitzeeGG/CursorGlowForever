@@ -46,6 +46,8 @@ The glow is placed where your cursor is heading, so it stays on the cursor durin
 
 Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > Cursor Glow Forever**. A live preview at the top shows your cursor, and the glove drawn while turning the camera, as you change things, including the rings running through a demo cast.
 
+**Reset to defaults** sits next to the tabs and resets the current profile.
+
 **Cursor tab**
 - **Profiles:** named profiles shared by all your characters; each character remembers which one it uses. Create one from a copy of the current settings, switch, copy from another, or delete.
 - **Colour:** class colour or a custom colour
@@ -53,7 +55,6 @@ Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > 
 - **Visibility:** show the glow always, in combat or out of combat, and hide it over hover targets
 - **Hover outlines:** outline hover cursors, outline vendors and services (off by default), dim outlines out of range and how faint
 - **Turning the camera:** draw the glove, its colour and tint, and how much stronger the glow is
-- **Reset to defaults** (for the current profile)
 
 **Effects tab**
 - **Finding the cursor:** shake to find and how many shakes it takes, pulse in combat and its colour (off by default), pulse when idle (off by default)
