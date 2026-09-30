@@ -320,6 +320,24 @@ StaticPopupDialogs.CURSORGLOWFOREVER_DELETE_PROFILE = {
 }
 
 
+StaticPopupDialogs.CURSORGLOWFOREVER_RESET = {
+	text = L["Reset all settings in the profile %s to their defaults?"],
+	button1 = YES,
+	button2 = NO,
+	OnAccept = function()
+		for key, value in pairs(ns.defaults) do
+			ns.db[key] = type(value) == "table" and CopyTable(value) or value
+		end
+		ns.setEnabled(ns.db.enabled)
+		onChanged()
+	end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = 3,
+}
+
+
 -- a list of profiles under a button; onPick(name) for the one clicked
 local menu
 local function showProfileMenu(anchor, names, onPick)
@@ -596,11 +614,7 @@ local function build()
 	local reset = createButton(panel, L["Reset to defaults"], 140)
 	reset:SetPoint("LEFT", tabs[#tabs], "RIGHT", 12, 0)
 	reset:SetScript("OnClick", function()
-		for key, value in pairs(ns.defaults) do
-			ns.db[key] = type(value) == "table" and CopyTable(value) or value
-		end
-		ns.setEnabled(ns.db.enabled)
-		onChanged()
+		StaticPopup_Show("CURSORGLOWFOREVER_RESET", getProfileLabel(ns.getProfileName()))
 	end)
 
 	local line = panel:CreateTexture(nil, "ARTWORK")

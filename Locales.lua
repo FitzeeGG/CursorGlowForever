@@ -86,6 +86,7 @@ if locale == "deDE" then
 		["Ring colour"] = "Ringfarbe",
 		["Click ripple"] = "Klickwelle",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "Wo du klickst, breitet sich ein Ring aus und verblasst, damit du jeden Klick siehst.",
+		["Reset all settings in the profile %s to their defaults?"] = "Alle Einstellungen im Profil %s auf die Standardwerte zurücksetzen?",
 	}
 elseif locale == "frFR" then
 	translations = {
@@ -164,6 +165,7 @@ elseif locale == "frFR" then
 		["Ring colour"] = "Couleur des anneaux",
 		["Click ripple"] = "Onde au clic",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "Un anneau s'étend et s'estompe là où vous cliquez, pour voir chaque clic.",
+		["Reset all settings in the profile %s to their defaults?"] = "Réinitialiser tous les réglages du profil %s à leurs valeurs par défaut ?",
 	}
 elseif locale == "esES" or locale == "esMX" then
 	translations = {
@@ -242,6 +244,7 @@ elseif locale == "esES" or locale == "esMX" then
 		["Ring colour"] = "Color de los anillos",
 		["Click ripple"] = "Onda al hacer clic",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "Un anillo se expande y se desvanece donde haces clic, para que veas cada clic.",
+		["Reset all settings in the profile %s to their defaults?"] = "¿Restablecer todos los ajustes del perfil %s a sus valores predeterminados?",
 	}
 elseif locale == "ptBR" then
 	translations = {
@@ -320,6 +323,7 @@ elseif locale == "ptBR" then
 		["Ring colour"] = "Cor dos anéis",
 		["Click ripple"] = "Onda ao clicar",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "Um anel se espalha e some onde você clica, para você ver cada clique.",
+		["Reset all settings in the profile %s to their defaults?"] = "Restaurar todas as configurações do perfil %s para o padrão?",
 	}
 elseif locale == "itIT" then
 	translations = {
@@ -398,6 +402,7 @@ elseif locale == "itIT" then
 		["Ring colour"] = "Colore degli anelli",
 		["Click ripple"] = "Onda al clic",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "Un anello si allarga e svanisce dove clicchi, così vedi ogni clic.",
+		["Reset all settings in the profile %s to their defaults?"] = "Ripristinare tutte le impostazioni del profilo %s ai valori predefiniti?",
 	}
 elseif locale == "ruRU" then
 	translations = {
@@ -476,6 +481,7 @@ elseif locale == "ruRU" then
 		["Ring colour"] = "Цвет колец",
 		["Click ripple"] = "Волна при щелчке",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "В месте щелчка расходится и гаснет кольцо, чтобы был виден каждый щелчок.",
+		["Reset all settings in the profile %s to their defaults?"] = "Сбросить все настройки профиля %s на значения по умолчанию?",
 	}
 elseif locale == "koKR" then
 	translations = {
@@ -554,6 +560,7 @@ elseif locale == "koKR" then
 		["Ring colour"] = "고리 색상",
 		["Click ripple"] = "클릭 파동",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "클릭한 자리에서 고리가 퍼지며 사라져 클릭할 때마다 확인할 수 있습니다.",
+		["Reset all settings in the profile %s to their defaults?"] = "%s 프로필의 모든 설정을 기본값으로 초기화할까요?",
 	}
 elseif locale == "zhCN" then
 	translations = {
@@ -632,6 +639,7 @@ elseif locale == "zhCN" then
 		["Ring colour"] = "圆环颜色",
 		["Click ripple"] = "点击波纹",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "在你点击的位置扩散出一个逐渐消失的圆环，让每次点击都清晰可见。",
+		["Reset all settings in the profile %s to their defaults?"] = "将配置文件%s的所有设置恢复为默认值？",
 	}
 elseif locale == "zhTW" then
 	translations = {
@@ -710,6 +718,7 @@ elseif locale == "zhTW" then
 		["Ring colour"] = "圓環顏色",
 		["Click ripple"] = "點擊波紋",
 		["A ring spreads out and fades where you click, so you can see each click land."] = "在你點擊的位置擴散出一個逐漸消失的圓環，讓每次點擊都清楚可見。",
+		["Reset all settings in the profile %s to their defaults?"] = "將設定檔%s的所有設定恢復為預設值？",
 	}
 end
 
