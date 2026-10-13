@@ -1,5 +1,11 @@
 # Cursor Glow Forever
 
+## 1.0.4
+
+- Settings that depend on another one are greyed out while it's off: the shake count, the combat pulse colour, the ring colour, position and size (with no ring on), the glove settings (without the drawn glove), and the hover outline settings.
+- The selected settings tab is underlined, and Reset to defaults sits apart from the tabs so it doesn't look like one.
+- The settings scroll bar only shows when a tab doesn't fit.
+
 ## 1.0.3
 
 - New "Cast ring" (off by default): a ring around the cursor fills up while you cast and drains while you channel.

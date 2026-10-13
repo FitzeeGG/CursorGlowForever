@@ -10,12 +10,31 @@ local widgets = {}
 -- the settings scroll under a fixed header holding the live preview and the
 -- tabs; each tab is a page in the scroll area
 local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
+scroll.scrollBarHideable = true
 local content = CreateFrame("Frame", nil, scroll)
 scroll:SetScrollChild(content)
 local pages, tabs = {}, {}
 local parent = content -- the page widgets are being built on
 local PREVIEW_MAX = 40 -- largest sample cursor, so its glow fits the preview
 local RIGHT_COLUMN = 344
+
+
+-- greyed out and unclickable when the setting it depends on is off
+local function setUsable(widget, usable)
+	widget:SetAlpha(usable and 1 or .4)
+	if widget.SetEnabled then
+		widget:SetEnabled(usable)
+	elseif widget.EnableMouse then
+		widget:EnableMouse(usable)
+	end
+end
+
+
+-- widget is only usable while test() is true (see the last refresh in build)
+local dependencies = {}
+local function requires(widget, test)
+	table.insert(dependencies, {widget = widget, test = test})
+end
 
 
 local function onChanged()
@@ -159,10 +178,10 @@ local function createColorSwatch(key, text, disabledBy)
 	end)
 	function swatch:refresh()
 		self.color:SetColorTexture(unpack(ns.db[key]))
-		local disabled = disabledBy and ns.db[disabledBy]
-		self:SetEnabled(not disabled)
-		self:SetAlpha(disabled and .4 or 1)
+		setUsable(self, not (disabledBy and ns.db[disabledBy]))
 	end
+	-- also unused while the colour it stands in for is used
+	requires(swatch, function() return not (disabledBy and ns.db[disabledBy]) end)
 	table.insert(widgets, swatch)
 	return swatch
 end
@@ -562,6 +581,16 @@ local function buildCursorPage(page)
 		L["How much stronger the glow is around the glove drawn while turning the camera."])
 	intensity:SetPoint("TOPLEFT", tint, "BOTTOMLEFT", 0, -34)
 
+	local function db(key) return function() return ns.db[key] end end
+	local function hoverOutlines() return ns.db.hideOnHover and ns.db.outlineHover end
+	requires(outlineHover, db("hideOnHover"))
+	requires(outlineServices, hoverOutlines)
+	requires(dimRange, hoverOutlines)
+	requires(rangeStrength, function() return hoverOutlines() and ns.db.dimOutOfRange end)
+	for _, widget in ipairs({gloveGlowColor, gloveSwatch, tint, intensity}) do
+		requires(widget, db("gloveWhileTurning"))
+	end
+
 	page.lowest = {prediction, intensity}
 end
 
@@ -643,6 +672,13 @@ local function buildEffectsPage(page)
 	end
 	table.insert(widgets, placeHint)
 
+	requires(shakeCount, function() return ns.db.shakeToFind end)
+	requires(pulseGlowColor, function() return ns.db.combatPulse end)
+	requires(pulseSwatch, function() return ns.db.combatPulse end)
+	for _, widget in ipairs({ringGlowColor, ringSwatch, ringPosition, placeHint, ringSize, ringScale}) do
+		requires(widget, function() return ns.db.castRing or ns.db.gcdRing end)
+	end
+
 	page.lowest = {idlePulse, ringScale}
 end
 
@@ -657,6 +693,11 @@ local function fitContent()
 		bottom = math.min(bottom, widget:GetBottom() or bottom)
 	end
 	content:SetHeight(top - bottom + 16)
+	-- no scroll bar when everything fits
+	local fits = content:GetHeight() <= (scroll:GetHeight() or 0) + 1
+	if scroll.ScrollBar then scroll.ScrollBar:SetShown(not fits) end
+	scroll:EnableMouseWheel(not fits)
+	if fits then scroll:SetVerticalScroll(0) end
 end
 
 
@@ -664,7 +705,10 @@ local function showPage(index)
 	panel.page = index
 	for i, page in ipairs(pages) do page:SetShown(i == index) end
 	for i, tab in ipairs(tabs) do
-		if i == index then tab:LockHighlight() else tab:UnlockHighlight() end
+		local selected = i == index
+		if selected then tab:LockHighlight() else tab:UnlockHighlight() end
+		tab.underline:SetShown(selected)
+		tab:SetAlpha(selected and 1 or .7)
 	end
 	if menu then menu:Hide() end
 	scroll:SetVerticalScroll(0)
@@ -687,10 +731,18 @@ local function build()
 		local tab = createButton(panel, name, 110)
 		tab:SetPoint("BOTTOMLEFT", panel, "TOPLEFT", 16 + 114 * (i - 1), -128)
 		tab:SetScript("OnClick", function() showPage(i) end)
+		tab.underline = tab:CreateTexture(nil, "OVERLAY")
+		tab.underline:SetColorTexture(1, .82, 0, 1)
+		tab.underline:SetHeight(2)
+		tab.underline:SetPoint("TOPLEFT", tab, "BOTTOMLEFT", 6, -1)
+		tab.underline:SetPoint("TOPRIGHT", tab, "BOTTOMRIGHT", -6, -1)
 		tabs[i] = tab
 	end
-	local reset = createButton(panel, L["Reset to defaults"], 140)
-	reset:SetPoint("LEFT", tabs[#tabs], "RIGHT", 12, 0)
+	local reset = createButton(panel, L["Reset to defaults"], 130)
+	reset:SetHeight(20)
+	reset:SetNormalFontObject("GameFontNormalSmall")
+	reset:SetHighlightFontObject("GameFontHighlightSmall")
+	reset:SetPoint("BOTTOMRIGHT", preview, "BOTTOMLEFT", -12, -1)
 	reset:SetScript("OnClick", function()
 		StaticPopup_Show("CURSORGLOWFOREVER_RESET", getProfileLabel(ns.getProfileName()))
 	end)
@@ -706,6 +758,8 @@ local function build()
 	scroll:SetScript("OnSizeChanged", function(_, width) content:SetWidth(width) end)
 	content:SetSize(640, 700)
 
+	scroll:HookScript("OnSizeChanged", function() fitContent() end)
+
 	for i, buildPage in ipairs({buildCursorPage, buildEffectsPage}) do
 		local page = CreateFrame("Frame", nil, content)
 		page:SetPoint("TOPLEFT")
@@ -716,6 +770,16 @@ local function build()
 		pages[i] = page
 	end
 	parent = content
+
+	-- a widget with several conditions needs them all
+	table.insert(widgets, {refresh = function()
+		local usable = {}
+		for _, dependency in ipairs(dependencies) do
+			local widget = dependency.widget
+			usable[widget] = usable[widget] ~= false and dependency.test() and true or false
+		end
+		for widget, isUsable in pairs(usable) do setUsable(widget, isUsable) end
+	end})
 end
 
 
