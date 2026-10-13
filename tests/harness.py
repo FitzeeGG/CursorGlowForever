@@ -38,7 +38,8 @@ methods.Show=function(s) s.shown=true if s.scripts.OnShow then s.scripts.OnShow(
 methods.Hide=function(s) s.shown=false end
 methods.SetScript=function(s,k,v) s.scripts[k]=v end
 methods.HookScript=function(s,k,v) local old=s.scripts[k] s.scripts[k]=function(...) if old then old(...) end v(...) end end
-methods.SetPoint=function(s,p,rel,rp,x,y) s.pt={p,rp,x or 0,y or 0} end
+methods.SetPoint=function(s,p,rel,rp,x,y) s.pt={p,rp,x or 0,y or 0} s.moves=(s.moves or 0)+1 end
+methods.SetSnapToPixelGrid=function(s,v) s.snaps=v end
 methods.SetSize=function(s,w,h) s.w,s.h=w,h end
 methods.SetVertexColor=function(s,r,g,b) s.vc={r,g,b} end
 methods.SetColorTexture=function(s,r,g,b) s.vc={r,g,b} end
@@ -119,8 +120,8 @@ ns.db.outlineServices = true -- most cases below cover the service outlines
 
 function ev(e, ...) events.scripts.OnEvent(events, e, ...) end
 -- a frame with the mouse moving a little, or still
-function frame() now = now + 1/60 cx = cx + 1 driver.scripts.OnUpdate(driver) end
-function still() now = now + 1/60 driver.scripts.OnUpdate(driver) end
+function frame() now = now + 1/60 cx = cx + 1 driver.scripts.OnUpdate(driver, 1/60) end
+function still() now = now + 1/60 driver.scripts.OnUpdate(driver, 1/60) end
 function idle(n) for i = 1, (n or 60) do frame() end end
 function stillFrames(n) for i = 1, (n or 60) do still() end end
 -- run some code, then the frame it happened in (the mouse still: tests move it with cx when they mean to)
@@ -140,7 +141,7 @@ function view()
 	if m == "base" then return "glove glow" elseif m == "turning" then return "drawn glove + strong glow" end
 	return "outline:"..m
 end
-function shakeFrames(swings, stepX) for k = 1, swings do for i = 1, 4 do now = now + 1/60 cx = cx + stepX * (k % 2 == 0 and 1 or -1) driver.scripts.OnUpdate(driver) end end end
+function shakeFrames(swings, stepX) for k = 1, swings do for i = 1, 4 do now = now + 1/60 cx = cx + stepX * (k % 2 == 0 and 1 or -1) driver.scripts.OnUpdate(driver, 1/60) end end end
 function findWidget(text) for _, f in ipairs(frames) do if f.text == text or (f.label and f.label.text == text) then return f end end end
 '''
 

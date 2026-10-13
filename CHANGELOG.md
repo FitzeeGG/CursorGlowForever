@@ -5,6 +5,8 @@
 - Settings that depend on another one are greyed out while it's off: the shake count, the combat pulse colour, the ring colour, position and size (with no ring on), the glove settings (without the drawn glove), and the hover outline settings.
 - The selected settings tab is underlined, and Reset to defaults sits apart from the tabs so it doesn't look like one.
 - The settings scroll bar only shows when a tab doesn't fit.
+- Smoother glow: it glides between screen pixels instead of stepping from one to the next (the rings and click ripple too), and it leads the cursor by a steadier amount, so it no longer wobbles around the cursor with uneven frame rates or high polling rate mice.
+- Less work each frame: the glow isn't moved while the mouse is still, and the combat and idle pulses leave the hover outline alone while it's hidden.
 
 ## 1.0.3
 

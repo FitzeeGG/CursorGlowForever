@@ -118,6 +118,17 @@ cursor:SetFrameLevel(10000)
 cursor:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT")
 cursor:Hide()
 
+-- The glow follows the cursor between whole screen pixels instead of jumping
+-- from one to the next (the drawn glove keeps snapping: it stands still and
+-- stays sharp).
+local function unsnap(texture)
+	if texture.SetSnapToPixelGrid then
+		texture:SetSnapToPixelGrid(false)
+		texture:SetTexelSnappingBias(0)
+	end
+end
+ns.unsnap = unsnap
+
 -- soft round halo for shake to find and the combat pulse (no hole, unlike the
 -- shaped glow, so it can grow)
 cursor.halo = cursor:CreateTexture(nil, "BACKGROUND", nil, -1)
@@ -126,6 +137,9 @@ cursor.halo:SetPoint("CENTER", cursor, "CENTER")
 cursor.halo:SetAlpha(0)
 cursor.glow = cursor:CreateTexture(nil, "BACKGROUND")
 cursor.outline = cursor:CreateTexture(nil, "BORDER")
+unsnap(cursor.halo)
+unsnap(cursor.glow)
+unsnap(cursor.outline)
 cursor.outline:SetTexture(TEXTURES.."point-outline")
 -- stands in for the game cursor while it is hidden (turning the camera)
 cursor.glove = cursor:CreateTexture(nil, "ARTWORK")
@@ -137,12 +151,15 @@ cursor.hover = CreateFrame("Frame", nil, cursor)
 cursor.hover:SetAllPoints(cursor)
 cursor.hover.soft = cursor.hover:CreateTexture(nil, "BACKGROUND")
 cursor.hover.soft:SetTexture(TEXTURES.."soft")
+unsnap(cursor.hover.soft)
 cursor.hover.copies = {}
 for _, ring in ipairs(OUTLINE_RINGS) do
 	for copy = 0, OUTLINE_COPIES - 1 do
 		local texture = cursor.hover:CreateTexture(nil, "BORDER")
 		local mask = cursor.hover:CreateMaskTexture()
 		texture:AddMaskTexture(mask)
+		unsnap(texture)
+		unsnap(mask)
 		texture.mask = mask
 		texture.ring = ring
 		texture.angle = 2 * math.pi * copy / OUTLINE_COPIES
@@ -176,6 +193,13 @@ function ns.refreshHoverArt(force)
 end
 
 
+-- the hover outline is skipped while hidden: the pulses change it every frame
+local function isHoverShown()
+	local mode = cursor.mode
+	return mode ~= "base" and mode ~= "turning"
+end
+
+
 local function setMode(mode)
 	if cursor.mode == mode then return end
 	cursor.mode = mode
@@ -185,6 +209,7 @@ local function setMode(mode)
 	cursor.glove:SetShown(mode == "turning")
 	cursor.hover:SetShown(not base)
 	ns.refreshHoverArt()
+	if not base then ns.updateColor() end
 	ns.updateOpacity()
 end
 
@@ -259,6 +284,8 @@ function ns.updateOpacity(effect)
 	-- the hover outline follows the same opacity settings, and is weaker while
 	-- the target is out of interaction range
 	local range = db.dimOutOfRange and ns.hoverInRange == false and db.outOfRangeStrength or 1
+	-- the hover outline only while it shows (setMode brings it up to date)
+	if not isHoverShown() then return end
 	cursor.hover.soft:SetAlpha(math.min(SOFT_ALPHA * db.glowOpacity / .35 * effect, 1) * range * idle)
 	for _, texture in ipairs(cursor.hover.copies) do
 		texture:SetAlpha(math.min(texture.ring.alpha * db.outlineOpacity / .75 * effect, 1) * range)
@@ -281,6 +308,7 @@ function ns.updateColor(pulseTint, haloTint)
 	r, g, b = r + (pr - r) * pulseTint, g + (pg - g) * pulseTint, b + (pb - b) * pulseTint
 	cursor.glow:SetVertexColor(r, g, b)
 	cursor.outline:SetVertexColor(r, g, b)
+	if not isHoverShown() then return end
 	cursor.hover.soft:SetVertexColor(r, g, b)
 	for _, texture in ipairs(cursor.hover.copies) do texture:SetColorTexture(r, g, b) end
 end
@@ -969,22 +997,38 @@ end
 
 -- EVERY FRAME
 -- Anything drawn in game trails the game cursor by about a frame, so the
--- cursor frame is placed where the cursor is heading: its position plus its
--- movement over the last frame, scaled by the prediction option.
+-- cursor frame is placed where the cursor is heading: its position plus a
+-- frame of its speed, scaled by the prediction option. The speed (per second)
+-- and the frame time are each averaged with the frame before: the mouse and
+-- the frames don't tick together, so a single frame's movement jumps about and
+-- the glow would wobble around the cursor.
 local driver = CreateFrame("Frame")
 driver:Hide() -- until the saved settings are loaded
-driver:SetScript("OnUpdate", function()
+local placedX, placedY -- where the cursor frame was last placed
+driver:SetScript("OnUpdate", function(_, elapsed)
 	local db = ns.db
 	local now = GetTime()
 	local x, y = GetCursorPosition()
 	local dx, dy = x - state.lastX, y - state.lastY
+	local frameTime = elapsed or now - state.lastFrameTime
 	if dx ~= 0 or dy ~= 0 then state.lastMoveTime = now end
 	if isDistanceChanging() then state.lastWalkTime = now end
-	-- No prediction after a pause (the game in the background, a loading
-	-- screen) or across a jump no mouse makes in one frame (the cursor coming
-	-- back in from outside the window): it would throw the glow off the cursor.
+	-- No prediction with the mouse stopped (it would overshoot), after a pause
+	-- (the game in the background, a loading screen) or across a jump no mouse
+	-- makes in one frame (the cursor coming back in from outside the window):
+	-- it would throw the glow off the cursor.
 	local screenHeight = UIParent:GetHeight() * UIParent:GetEffectiveScale()
-	if now - state.lastFrameTime > .1 or math.sqrt(dx * dx + dy * dy) > screenHeight * .1 then
+	if (dx ~= 0 or dy ~= 0) and frameTime > 0 and frameTime <= .1
+		and now - state.lastFrameTime <= .1 and math.sqrt(dx * dx + dy * dy) <= screenHeight * .1 then
+		local speedX, speedY, leadTime = dx / frameTime, dy / frameTime, frameTime
+		if state.speedX then
+			speedX, speedY = (speedX + state.speedX) / 2, (speedY + state.speedY) / 2
+			leadTime = (frameTime + state.frameTime) / 2
+		end
+		state.speedX, state.speedY, state.frameTime = dx / frameTime, dy / frameTime, frameTime
+		dx, dy = speedX * leadTime, speedY * leadTime
+	else
+		state.speedX, state.speedY, state.frameTime = nil, nil, nil
 		dx, dy = 0, 0
 	end
 	state.lastX, state.lastY, state.lastFrameTime = x, y, now
@@ -1128,8 +1172,13 @@ driver:SetScript("OnUpdate", function()
 	if show then
 		local lead = hidden and 0 or db.prediction
 		local scale = UIParent:GetEffectiveScale()
-		cursor:ClearAllPoints()
-		cursor:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", (x + dx * lead) / scale, (y + dy * lead) / scale)
+		local px, py = (x + dx * lead) / scale, (y + dy * lead) / scale
+		-- moving a frame makes the game lay it out again: only when it moved
+		if px ~= placedX or py ~= placedY then
+			placedX, placedY = px, py
+			cursor:ClearAllPoints()
+			cursor:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", px, py)
+		end
 	end
 end)
 

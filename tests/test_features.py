@@ -40,7 +40,7 @@ def run(sim):
 		"hmin, hmax = math.min(hmin, C.halo.alpha), math.max(hmax, C.halo.alpha) amin, amax = math.min(amin, C.glow.alpha), math.max(amax, C.glow.alpha) end",
 		"hmax > .25 and hmin < .02 and amax > amin * 1.4 and C.glow.w == baseSize", ["hmin", "hmax", "amin", "amax"])
 	sim.check("  stops after combat", "inCombat = false stillFrames(2)", "C.halo.alpha == 0 and C.glow.alpha == baseAlpha")
-	sim.execute("baseVC = {unpack(C.glow.vc)}")
+	sim.execute("ns.updateColor() baseVC = {unpack(C.glow.vc)}")  # (hover tests swap the class)
 	sim.check("  in the glow colour: colour unchanged", "inCombat = true stillFrames(72)",
 		"C.glow.vc[1] == baseVC[1] and C.glow.vc[2] == baseVC[2] and C.glow.vc[3] == baseVC[3]")
 	sim.check("  in its own colour (red): the glow leans to it, the halo takes it",
@@ -216,6 +216,30 @@ def run(sim):
 	for label, code, widget, alpha in grey:
 		sim.check(label, code + " panelRef:Show()", "findWidget('%s').alpha == %s" % (widget, alpha))
 	sim.execute("ns.db.gloveWhileTurning, ns.db.gcdRing, ns.db.combatPulse, ns.db.pulseUseGlowColor = true, false, false, true panelRef:Show()")
+
+	print(" smoothness")
+	sim.check("glow layers move between whole pixels", "",
+		"C.glow.snaps == false and C.outline.snaps == false and C.halo.snaps == false and C.hover.copies[1].snaps == false")
+	sim.check("  the drawn glove stays sharp", "", "C.glove.snaps == nil")
+	# the cursor frame's lead in screen pixels (UIParent scale .64)
+	sim.execute("function lead() return C.pt[3] * .64 - cx end "
+		"function move(step, dt) now = now + dt cx = cx + step driver.scripts.OnUpdate(driver, dt) end")
+	sim.check("uneven mouse steps: a steady lead",
+		"stillFrames(10) leads = {} for i = 1, 6 do move(i % 2 == 0 and 3 or 1, 1/60) leads[i] = lead() end",
+		"leads[2] == 2 and leads[3] == 2 and leads[6] == 2", ["leads[1]", "leads[2]", "leads[3]"])
+	sim.check("uneven frame times: a steady lead",
+		"stillFrames(10) for i = 1, 6 do local dt = i % 2 == 0 and 1/40 or 1/120 move(dt * 120, dt) leads[i] = lead() end",
+		near("leads[3]", "leads[6]") + " and " + near("leads[4]", "leads[5]") + " and " + near("leads[3]", "leads[4]"), ["leads[3]", "leads[4]"])
+	sim.check("mouse stops: no lead", "still()", "lead() == 0")
+	sim.check("mouse still: the glow isn't moved", "C.moves = 0 stillFrames(30)", "C.moves == 0")
+	sim.check("  moving: it is", "idle(5)", "C.moves == 5")
+	sim.check("combat pulse leaves the hidden hover outline alone",
+		"ns.db.combatPulse = true inCombat = true C.hover.copies[1].vc = nil idle(20)",
+		"C.mode == 'base' and C.hover.copies[1].vc == nil and C.glow.vc ~= nil")
+	sim.check("  coloured as it shows", "reach({enemy=true}, {'Boar','Level 5'}, true) idle(30)",
+		"C.mode == 'Attack' and C.hover.copies[1].vc ~= nil")
+	sim.check("  and pulses with it", "local before = C.hover.soft.alpha idle(17)", "C.hover.soft.alpha ~= before")
+	sim.execute("leave() idle(30) ns.db.combatPulse = false inCombat = false idle(5)")
 
 	print(" combat")
 	sim.check("/cg in combat waits", "openedSettings = 0 inCombat = true SlashCmdList.CURSORGLOWFOREVER('')", "openedSettings == 0")
