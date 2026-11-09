@@ -2,6 +2,7 @@
 
 ## 1.0.5
 
+- New add-on icon.
 - Movement prediction now defaults to 0.4 frames (was 1), so the glow overshoots less when the mouse stops.
 - Hover outlines (pickaxe, herbs, sword, loot bag...) are now a thin line around the cursor like the glove's, instead of a thick solid band. The new "Fill hover outlines" setting brings the solid band back.
 - Enemy nameplates no longer get the sword outline when moving straight from one enemy onto another enemy's nameplate, or onto a nameplate while you or the enemy are moving (in combat too).
