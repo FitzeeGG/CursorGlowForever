@@ -6,12 +6,18 @@ import re
 from harness import ADDON
 
 
+# HOVER_SHEETS keys in CursorGlowForever.lua
+with io.open(os.path.join(ADDON, "CursorGlowForever.lua"), encoding="utf-8") as f:
+	HOVER_KEYS = re.findall(r"^	(\w+) = \"UI\w*2x\"", f.read().split("local HOVER_SHEETS = {")[1].split("}")[0], re.M)
+
+
 def near(a, b):
 	return "math.abs((%s) - (%s)) < 1e-6" % (a, b)
 
 
 def run(sim):
 	sim.execute("reset() leave() idle(60)")
+	sim.execute("textureFiles = {%s}" % ", ".join("['%s'] = true" % f for f in os.listdir(os.path.join(ADDON, "textures"))))
 
 	print(" defaults")
 	sim.check("vendor and service outlines off, 7 shakes, combat pulse off", "",
@@ -240,6 +246,26 @@ def run(sim):
 		"C.mode == 'Attack' and C.hover.copies[1].vc ~= nil")
 	sim.check("  and pulses with it", "local before = C.hover.soft.alpha idle(17)", "C.hover.soft.alpha ~= before")
 	sim.execute("leave() idle(30) ns.db.combatPulse = false inCombat = false idle(5)")
+
+	print(" hover outline style")
+	sim.check("a thin ring by default, like the glove's", "reach({enemy=true}, {'Boar','Level 5'}, true) idle(30)",
+		"ns.defaults.fillHoverOutline == false and C.mode == 'Attack' and C.hover.ring.shown and C.hover.ring.path:find('outline%-Attack$') "
+		"and not C.hover.copies[1].shown and C.hover.ring.w == C.w * 2")
+	sim.check("  in the glow colour, at the outline opacity", "",
+		"C.hover.ring.vc[1] == C.glow.vc[1] and C.hover.ring.vc[2] == C.glow.vc[2] and " + near("C.hover.ring.alpha", "ns.db.outlineOpacity"))
+	sim.check("  filled: the band cut from the cursor art instead", "ns.db.fillHoverOutline = true ns.updateLayout() idle(2)",
+		"not C.hover.ring.shown and C.hover.copies[1].shown and C.hover.copies[1].mask.path ~= nil")
+	sim.check("  and back", "ns.db.fillHoverOutline = false ns.updateLayout() idle(2)", "C.hover.ring.shown and not C.hover.copies[1].shown")
+	sim.check("  out of range: dimmed", "ns.hoverInRange = false ns.updateOpacity()",
+		near("C.hover.ring.alpha", "ns.db.outlineOpacity * ns.db.outOfRangeStrength"))
+	sim.execute("ns.hoverInRange = nil leave() idle(30) tip=false")
+	sim.check("another cursor: its own ring", "reach(nil, {'Copper Vein','Requires Mining'}, true) idle(10)", "C.hover.ring.path:find('outline%-Mine$')")
+	sim.execute("leave() idle(30) tip=false")
+	sim.check("every hover cursor has a ring texture", "",
+		"(function() for _, key in ipairs({" + ", ".join("'%s'" % k for k in HOVER_KEYS) + "}) do "
+		"if not textureFiles['outline-' .. key .. '.tga'] then return false end end return true end)()")
+	sim.check("fill greyed without hover outlines", "ns.db.outlineHover = false panelRef:Show()", "findWidget('Fill hover outlines').alpha == .4")
+	sim.execute("ns.db.outlineHover = true panelRef:Show()")
 
 	print(" combat")
 	sim.check("/cg in combat waits", "openedSettings = 0 inCombat = true SlashCmdList.CURSORGLOWFOREVER('')", "openedSettings == 0")

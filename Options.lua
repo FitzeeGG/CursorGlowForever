@@ -551,9 +551,13 @@ local function buildCursorPage(page)
 		L["Outline the hover cursor (loot bag, pickaxe, sword...) when it can be told which one is showing. Unrecognised ones get no outline."])
 	outlineHover:SetPoint("TOPLEFT", hover, "BOTTOMLEFT", 0, -4)
 
+	local fillOutline = createCheckbox("fillHoverOutline", L["Fill hover outlines"],
+		L["Draw the hover outline as a thick solid band against the cursor, instead of a thin line around it like the glove's."])
+	fillOutline:SetPoint("TOPLEFT", outlineHover, "BOTTOMLEFT", 0, -4)
+
 	local outlineServices = createCheckbox("outlineServices", L["Outline vendors and services"],
 		L["Also outline the cursors of vendors, repairers, bankers, innkeepers, flight masters, stable masters and trainers. An NPC with a quest for you shows the quest cursor instead, which can't always be told in advance."])
-	outlineServices:SetPoint("TOPLEFT", outlineHover, "BOTTOMLEFT", 0, -4)
+	outlineServices:SetPoint("TOPLEFT", fillOutline, "BOTTOMLEFT", 0, -4)
 
 	local dimRange = createCheckbox("dimOutOfRange", L["Dim outlines out of range"],
 		L["Weaken the hover outline on NPCs and corpses while they are too far away to interact with, and bring it back to full strength in range."])
@@ -584,6 +588,7 @@ local function buildCursorPage(page)
 	local function db(key) return function() return ns.db[key] end end
 	local function hoverOutlines() return ns.db.hideOnHover and ns.db.outlineHover end
 	requires(outlineHover, db("hideOnHover"))
+	requires(fillOutline, hoverOutlines)
 	requires(outlineServices, hoverOutlines)
 	requires(dimRange, hoverOutlines)
 	requires(rangeStrength, function() return hoverOutlines() and ns.db.dimOutOfRange end)

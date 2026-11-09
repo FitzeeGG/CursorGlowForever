@@ -21,7 +21,7 @@ When the cursor changes as you hover something, the outline follows it:
 - **Vendors, bankers, repairers, innkeepers, flight masters, stable masters** and **trainers** (optional, off by default). Vendors who also repair get the anvil, and pet and class trainers only get the trainer outline for the class they teach, just like the game's cursor.
 - **Selling from your bags** at a vendor, and **repair mode**
 
-Each outline is cut from the game's own cursor art, so it always matches what you see. It switches to the greyed version while you're out of range, and fades until you're close enough to interact. If the addon can't tell which cursor is showing, it shows no outline rather than a wrong one.
+Each outline is a thin line traced from the game's own cursor art, like the glove's, so it always matches what you see. Prefer a bolder look? **Fill hover outlines** draws a thick solid band instead. The outline fades while you're out of range, until you're close enough to interact. If the addon can't tell which cursor is showing, it shows no outline rather than a wrong one.
 
 ### Your cursor, even while turning the camera
 Hold a mouse button to turn the camera and the game hides your cursor. Cursor Glow Forever draws the glove where your mouse was, with a stronger glow and a tint of your colour (or its own colour), so you always know where it'll come back.
@@ -53,7 +53,7 @@ Open them with **/cg** (or **/cursorglow**), or from **Esc > Options > AddOns > 
 - **Colour:** class colour or a custom colour
 - **Glow and outline:** glow opacity, glow size, outline opacity, cursor size (follows the game setting), movement prediction
 - **Visibility:** show the glow always, in combat or out of combat, and hide it over hover targets
-- **Hover outlines:** outline hover cursors, outline vendors and services (off by default), dim outlines out of range and how faint
+- **Hover outlines:** outline hover cursors, fill hover outlines, outline vendors and services (off by default), dim outlines out of range and how faint
 - **Turning the camera:** draw the glove, its colour and tint, and how much stronger the glow is
 
 **Effects tab**

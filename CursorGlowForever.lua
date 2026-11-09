@@ -80,6 +80,7 @@ ns.defaults = {
 	cursorSize = -1, -- -1 = game setting, otherwise an index of CURSOR_SIZES
 	hideOnHover = true,
 	outlineHover = true,
+	fillHoverOutline = false, -- the thick band built from the cursor art, instead of the thin ring
 	outlineServices = false, -- vendors, bankers... (quest givers can't always be told apart)
 	dimOutOfRange = true,
 	outOfRangeStrength = .4,
@@ -146,12 +147,17 @@ cursor.glove = cursor:CreateTexture(nil, "ARTWORK")
 cursor.glove:SetTexture(CURSORS.."Point")
 cursor.glove:SetAllPoints(cursor)
 
--- hover outline: solid colour masked by the hover cursor's own art
+-- hover outline: a thin ring around the hover cursor like the glove's
+-- (tools/hoverOutlines.py), or filled: solid colour masked by the hover
+-- cursor's own art
 cursor.hover = CreateFrame("Frame", nil, cursor)
 cursor.hover:SetAllPoints(cursor)
 cursor.hover.soft = cursor.hover:CreateTexture(nil, "BACKGROUND")
 cursor.hover.soft:SetTexture(TEXTURES.."soft")
 unsnap(cursor.hover.soft)
+cursor.hover.ring = cursor.hover:CreateTexture(nil, "BORDER")
+cursor.hover.ring:SetPoint("CENTER", cursor, "CENTER")
+unsnap(cursor.hover.ring)
 cursor.hover.copies = {}
 for _, ring in ipairs(OUTLINE_RINGS) do
 	for copy = 0, OUTLINE_COPIES - 1 do
@@ -177,6 +183,18 @@ ns.TEXTURES, ns.CURSORS = TEXTURES, CURSORS
 function ns.refreshHoverArt(force)
 	local mode = cursor.mode
 	if not HOVER_SHEETS[mode] or not cursor.sizeIndex then return end
+	-- the ring needs no greyed version: the cursors keep their shape out of range
+	local fill = ns.db and ns.db.fillHoverOutline
+	if fill ~= cursor.hoverFill then
+		cursor.hoverFill = fill
+		cursor.hover.ring:SetShown(not fill)
+		for _, texture in ipairs(cursor.hover.copies) do texture:SetShown(fill) end
+	end
+	if not fill then
+		cursor.hover.ring:SetTexture(TEXTURES.."outline-"..mode)
+		cursor.hoverArt = nil -- the masks are cut again once filled
+		return
+	end
 	local sheet = HOVER_SHEETS[mode]
 	local cells = ns.hoverInRange == false and UNABLE_CELLS or SHEET_CELLS
 	local left, top, cellSize = unpack(cells[cursor.sizeIndex])
@@ -287,6 +305,7 @@ function ns.updateOpacity(effect)
 	-- the hover outline only while it shows (setMode brings it up to date)
 	if not isHoverShown() then return end
 	cursor.hover.soft:SetAlpha(math.min(SOFT_ALPHA * db.glowOpacity / .35 * effect, 1) * range * idle)
+	cursor.hover.ring:SetAlpha(math.min(db.outlineOpacity * effect, 1) * range)
 	for _, texture in ipairs(cursor.hover.copies) do
 		texture:SetAlpha(math.min(texture.ring.alpha * db.outlineOpacity / .75 * effect, 1) * range)
 	end
@@ -310,6 +329,7 @@ function ns.updateColor(pulseTint, haloTint)
 	cursor.outline:SetVertexColor(r, g, b)
 	if not isHoverShown() then return end
 	cursor.hover.soft:SetVertexColor(r, g, b)
+	cursor.hover.ring:SetVertexColor(r, g, b)
 	for _, texture in ipairs(cursor.hover.copies) do texture:SetColorTexture(r, g, b) end
 end
 
@@ -348,6 +368,7 @@ function ns.updateLayout()
 	local softDiameter = SOFT_DIAMETER * unit * (1 + ns.getGlowSize()) / 2
 	cursor.hover.soft:SetSize(softDiameter, softDiameter)
 	cursor.hover.soft:SetPoint("CENTER", cursor, "CENTER")
+	cursor.hover.ring:SetSize(size * 2, size * 2)
 	if resized then
 		for _, texture in ipairs(cursor.hover.copies) do
 			texture:SetSize(size, size)
