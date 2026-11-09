@@ -230,8 +230,9 @@ def run(sim):
 	# the cursor frame's lead in screen pixels (UIParent scale .64)
 	sim.execute("function lead() return C.pt[3] * .64 - cx end "
 		"function move(step, dt) now = now + dt cx = cx + step driver.scripts.OnUpdate(driver, dt) end")
+	sim.check("prediction 0.4 frames by default", "", "ns.defaults.prediction == .4")
 	sim.check("uneven mouse steps: a steady lead",
-		"stillFrames(10) leads = {} for i = 1, 6 do move(i % 2 == 0 and 3 or 1, 1/60) leads[i] = lead() end",
+		"ns.db.prediction = 1 stillFrames(10) leads = {} for i = 1, 6 do move(i % 2 == 0 and 3 or 1, 1/60) leads[i] = lead() end",
 		"leads[2] == 2 and leads[3] == 2 and leads[6] == 2", ["leads[1]", "leads[2]", "leads[3]"])
 	sim.check("uneven frame times: a steady lead",
 		"stillFrames(10) for i = 1, 6 do local dt = i % 2 == 0 and 1/40 or 1/120 move(dt * 120, dt) leads[i] = lead() end",
@@ -239,6 +240,7 @@ def run(sim):
 	sim.check("mouse stops: no lead", "still()", "lead() == 0")
 	sim.check("mouse still: the glow isn't moved", "C.moves = 0 stillFrames(30)", "C.moves == 0")
 	sim.check("  moving: it is", "idle(5)", "C.moves == 5")
+	sim.check("the lead scales with the setting", "ns.db.prediction = .4 for i = 1, 4 do move(2, 1/60) end", near("lead()", ".8"))
 	sim.check("combat pulse leaves the hidden hover outline alone",
 		"ns.db.combatPulse = true inCombat = true C.hover.copies[1].vc = nil idle(20)",
 		"C.mode == 'base' and C.hover.copies[1].vc == nil and C.glow.vc ~= nil")

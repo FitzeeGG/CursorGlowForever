@@ -104,7 +104,7 @@ ns.defaults = {
 	ringSize = "default", -- a RING_SIZES key, or "custom" (ringScale)
 	ringScale = 1,
 	clickRipple = false,
-	prediction = 1,
+	prediction = .4,
 }
 ns.CURSOR_SIZES = CURSOR_SIZES
 
