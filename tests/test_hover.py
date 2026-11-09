@@ -16,6 +16,21 @@ SMITH = "{guid='Creature-0-1-2-3-3165-00A1'}"  # Ghrawt: vendor + repair, no que
 FARLEY = "{guid='Creature-0-1-2-3-295-00A2'}"  # Innkeeper Farley: in the quest giver list
 INN = "{guid='Creature-0-1-2-3-424242-00A3'}"  # an innkeeper new to Forever
 
+HARPY_A = "{enemy=true, guid='Creature-0-0-0-0-1-A1'}"
+HARPY_B = "{enemy=true, guid='Creature-0-0-0-0-2-B2'}"
+
+
+def switch(unit, name, plate, change, late=False):
+	"""Straight from one target to the next in one frame: the leave and the reach, then the cursor change if any."""
+	cursorChange = "ev('CURSOR_CHANGED', true, 0)" if change else ""
+	arrive = "onPlate=%s unit=%s ev('WORLD_CURSOR_TOOLTIP_UPDATE', 0) ev('WORLD_CURSOR_TOOLTIP_UPDATE', 1) ev('UPDATE_MOUSEOVER_UNIT') %s tip=true lines={'%s','Level 14'}" % (
+		"true" if plate else "false", unit, "" if late else cursorChange, name)
+	code = 'inFrame("%s")' % arrive
+	if late:
+		code += ' inFrame("%s")' % cursorChange
+	return code + " idle(20)"
+
+
 SCENARIOS = [
 	("basics", [
 		("open ground", "", "glove glow"),
@@ -49,6 +64,29 @@ SCENARIOS = [
 		("  onto the body, cursor change a frame after", "inFrame(\"onPlate=false\") inFrame(\"ev('CURSOR_CHANGED', true, 0)\") idle(20)", "outline:Attack"),
 		("  leave", "onPlate=false leave() idle(30) tip=false", "glove glow"),
 		("crossing right after reaching", "unit={enemy=true} ev('WORLD_CURSOR_TOOLTIP_UPDATE', 1) ev('UPDATE_MOUSEOVER_UNIT') idle(3) inFrame(\"cx=cx+2 ev('CURSOR_CHANGED', true, 0)\") idle(20)", "outline:Attack"),
+	]),
+	("between enemies", [
+		("on harpy A's body", "reach(" + HARPY_A + ", {'Harpy A','Level 14'}, true) idle(20)", "outline:Attack"),
+		("  straight onto harpy B's nameplate (pointer)", switch(HARPY_B, "Harpy B", plate=True, change=True), "glove glow"),
+		("  straight onto harpy A's body (sword)", switch(HARPY_A, "Harpy A", plate=False, change=True), "outline:Attack"),
+		("  straight onto harpy B's body (still the sword)", switch(HARPY_B, "Harpy B", plate=False, change=False), "outline:Attack"),
+		("  onto harpy A's nameplate, the change a frame late", switch(HARPY_A, "Harpy A", plate=True, change=True, late=True), "glove glow"),
+		("  leave", "onPlate=false leave() idle(30) tip=false", "glove glow"),
+		("harpy A in range", "reach(" + HARPY_A + ", {'Harpy A','Level 14'}, true) idle(20)", "outline:Attack"),
+		("  straight onto harpy B, out of range (greyed sword)", "inRange=false " + switch(HARPY_B, "Harpy B", plate=False, change=True), "outline:Attack"),
+	]),
+	("enemies while moving", [
+		("walking, on the harpy's body", "speed=7 reach(" + HARPY_A + ", {'Harpy A','Level 14'}, true) idle(20)", "outline:Attack"),
+		("  up onto its nameplate", "inFrame(\"onPlate=true ev('CURSOR_CHANGED', true, 0)\") idle(20)", "glove glow"),
+		("  back down onto its body", "inFrame(\"onPlate=false ev('CURSOR_CHANGED', true, 0)\") idle(20)", "outline:Attack"),
+		("  out of range: the sword greys", "inFrame(\"inRange=false ev('CURSOR_CHANGED', true, 0)\") idle(20)", "outline:Attack"),
+		("  leave", "speed=0 inRange=true leave() idle(30) tip=false", "glove glow"),
+		("the harpy walking, mouse still", "unitSpeed=5 reach(" + HARPY_A + ", {'Harpy A','Level 14'}, true) idle(20)", "outline:Attack"),
+		("  its nameplate drifts under the mouse", "inFrame(\"onPlate=true ev('CURSOR_CHANGED', true, 0)\") idle(20)", "glove glow"),
+		("  leave", "unitSpeed=0 onPlate=false leave() idle(30) tip=false", "glove glow"),
+		("in combat, walking, on the harpy's body", "inCombat=true speed=7 reach(" + HARPY_A + ", {'Harpy A','Level 14'}, true) idle(20)", "outline:Attack"),
+		("  up onto its nameplate (no range checks)", "inFrame(\"onPlate=true ev('CURSOR_CHANGED', true, 0)\") idle(20)", "glove glow"),
+		("  back down onto its body", "inFrame(\"onPlate=false ev('CURSOR_CHANGED', true, 0)\") idle(20)", "outline:Attack"),
 	]),
 	("quest givers", [
 		("repair vendor, no quests known", "reach(" + SMITH + ", {'Ghrawt','Bowyer'}, true) idle(10)", "outline:RepairNPC"),

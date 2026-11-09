@@ -1,5 +1,9 @@
 # Cursor Glow Forever
 
+## 1.0.5
+
+- Enemy nameplates no longer get the sword outline when moving straight from one enemy onto another enemy's nameplate, or onto a nameplate while you or the enemy are moving (in combat too).
+
 ## 1.0.4
 
 - Settings that depend on another one are greyed out while it's off: the shake count, the combat pulse colour, the ring colour, position and size (with no ring on), the glove settings (without the drawn glove), and the hover outline settings.

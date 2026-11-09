@@ -749,10 +749,14 @@ local function reachTarget(signal)
 	-- Moving straight from one target to the next, the game sends the leave
 	-- and the reach in the same frame: the look carries over from the target
 	-- just left (two chairs keep the cog, no cursor change comes).
+	-- What was left is kept too, to tell two enemies' bodies apart from a body
+	-- and a nameplate.
 	if now - state.leaveEventTime < SAME_FRAME then
 		state.changedBefore = state.changedAtLeave
+		state.previousCursor, state.previousInRange = state.cursorAtLeave, state.inRangeAtLeave
 	else
 		state.changedBefore = state.cursorChanged
+		state.previousCursor, state.previousInRange = state.hoverCursor, ns.hoverInRange
 	end
 	state.targetTime = now
 	state.hoverCursor = nil -- a new target may show another cursor
@@ -871,9 +875,14 @@ local function updateCursorChanged()
 		-- either back to the base cursor or on to another hover cursor (sword to
 		-- vendor bag, innkeeper to chair); a recognised target, or what was
 		-- learned about it, settles it. The tooltip can arrive a few frames
-		-- late, hence the whole window.
+		-- late, hence the whole window. Between two enemies it can't be another
+		-- hover cursor (every enemy shows the sword): it is onto the nameplate,
+		-- unless one is in interaction range and the other isn't (the greyed
+		-- sword).
 		if state.changedBefore and cursorChanged
-			and (state.hoverCursor or state.lookByName[getTargetName() or ""]) then
+			and (state.hoverCursor or state.lookByName[getTargetName() or ""])
+			and not (state.hoverCursor == "Attack" and state.previousCursor == "Attack"
+				and not (ns.hoverInRange ~= nil and state.previousInRange ~= nil and ns.hoverInRange ~= state.previousInRange)) then
 			changed = true
 		end
 		if changed ~= state.cursorChanged then
@@ -1137,6 +1146,15 @@ driver:SetScript("OnUpdate", function(_, elapsed)
 			state.pendingChange = nil
 			state.cursorChanged, state.lookSettled, state.hoverCheckTime = not state.cursorChanged, true, 0
 			debug("hover look", state.cursorChanged and "on" or "off", "(same target)")
+		elseif state.hoverCursor == "Attack" and now - change.time > UI_HANDOVER
+			and not (ns.hoverInRange ~= nil and checkDistance(3) ~= nil and checkDistance(3) ~= ns.hoverInRange) then
+			-- An enemy while the distance changes: crossing between its body and
+			-- its nameplate, unless the range check changed with it (the sword
+			-- greying or coming back). Without range checks (combat) it is taken
+			-- for the nameplate: a missing outline shows less than a wrong one.
+			state.pendingChange = nil
+			state.cursorChanged, state.lookSettled, state.hoverCheckTime = not state.cursorChanged, true, 0
+			debug("hover look", state.cursorChanged and "on" or "off", "(enemy, distance changing)")
 		elseif now - change.time > UI_HANDOVER then
 			-- With the mouse still, the change comes from the distance to the
 			-- target: far away it shows the base cursor, closer its greyed
@@ -1475,6 +1493,7 @@ function events:WORLD_CURSOR_TOOLTIP_UPDATE(anchorType)
 		-- leaving to open ground always brings the base cursor back
 		state.worldTarget = false
 		state.leaveEventTime, state.changedAtLeave = GetTime(), state.cursorChanged
+		state.cursorAtLeave, state.inRangeAtLeave = state.hoverCursor, ns.hoverInRange
 		if not UnitExists("mouseover") then leaveTarget() end
 	end
 end
