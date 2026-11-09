@@ -1,5 +1,6 @@
 # Renders the Cursor Glow Forever logo. Run: python make_logo.py
-# The mark: a pointer cursor with the addon's glow and outline, inside a cast ring.
+# The mark: the game's glove cursor with the addon's glow and outline, inside a cast ring.
+# glove.png is the glove from the game's Interface/Cursor/UICursor2x (its 128 px cell).
 import math, os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
@@ -11,9 +12,7 @@ BG_TOP, BG_BOT = (22, 26, 31), (11, 13, 16)
 GLOW = (255, 150, 30)        # the glow: warm orange
 GLOW_LIGHT = (255, 205, 110)
 EDGE = (20, 16, 10)
-STEEL_TOP, STEEL_BOT = (246, 248, 252), (170, 178, 190)
-# the pointer, tip at (0, 0), in units of its height
-ARROW = [(0, 0), (0, .80), (.19, .62), (.33, .94), (.47, .88), (.33, .57), (.58, .57)]
+GLOVE = Image.open(os.path.join(HERE, "glove.png")).convert("RGBA")
 
 
 def background(d):
@@ -22,13 +21,13 @@ def background(d):
         d.line([(0, y), (S, y)], fill=tuple(int(a + (b - a) * t) for a, b in zip(BG_TOP, BG_BOT)) + (255,))
 
 
-def arrow_mask(cx, cy, h):
-    """The pointer as a mask, its box centred on (cx, cy), h tall."""
-    w = .58 * h
-    x0, y0 = cx - w / 2, cy - h * .47
-    m = Image.new("L", (S, S))
-    ImageDraw.Draw(m).polygon([(x0 + x * h, y0 + y * h) for x, y in ARROW], fill=255)
-    return m
+def place_glove(cx, cy, h):
+    """The glove art on a full size layer, its drawn part centred on (cx, cy), h tall."""
+    art = GLOVE.crop(GLOVE.getchannel("A").getbbox())
+    art = art.resize((round(art.width * h / art.height), round(h)), Image.LANCZOS)
+    layer = Image.new("RGBA", (S, S))
+    layer.paste(art, (round(cx - art.width / 2), round(cy - art.height / 2)))
+    return layer
 
 
 def grow(mask, r):
@@ -54,21 +53,14 @@ def mark(img, cx, cy, R):
     ImageDraw.Draw(arc).arc(box, -90, 150, fill=GLOW + (255,), width=int(rw))
     img.alpha_composite(arc.filter(ImageFilter.GaussianBlur(R * .06)))
     img.alpha_composite(arc)
-    # the pointer: soft glow, bright outline, dark edge, steel body
-    h = R * 1.2
-    body = arrow_mask(cx + R * .02, cy, h)
+    # the glove: soft glow, bright outline, then the art (it has its own dark edge)
+    glove = place_glove(cx, cy, R * 1.15)
+    body = glove.getchannel("A").point(lambda v: 255 if v > 128 else 0)
     img.alpha_composite(solid(GLOW, grow(body, R * .2).filter(ImageFilter.GaussianBlur(R * .18)), .7))
     img.alpha_composite(solid(GLOW, grow(body, R * .12).filter(ImageFilter.GaussianBlur(R * .05)), .8))
-    img.alpha_composite(solid(GLOW_LIGHT, grow(body, R * .11)))
-    img.alpha_composite(solid(EDGE, grow(body, R * .045)))
-    steel = Image.new("RGBA", (S, S))
-    sd = ImageDraw.Draw(steel)
-    top, bot = cy - h * .47, cy + h * .47
-    for y in range(int(top), int(bot) + 1):
-        t = (y - top) / (bot - top)
-        sd.line([(0, y), (S, y)], fill=tuple(int(a + (b - a) * t) for a, b in zip(STEEL_TOP, STEEL_BOT)) + (255,))
-    steel.putalpha(body)
-    img.alpha_composite(steel)
+    img.alpha_composite(solid(GLOW_LIGHT, grow(body, R * .09)))
+    img.alpha_composite(solid(EDGE, grow(body, R * .03)))
+    img.alpha_composite(glove)
 
 
 def render(size, wordmark=True):
