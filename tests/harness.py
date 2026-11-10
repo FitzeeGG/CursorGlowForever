@@ -19,7 +19,7 @@ now=0 GetTime=function() return now end
 cx,cy=500,500 GetCursorPosition=function() return cx,cy end
 mlook=false IsMouselooking=function() return mlook end
 carrying=nil GetCursorInfo=function() return carrying end
-cvars={cursorSizePreferred="-1", gxMaximize="1", gxMonitor="0", CursorFreelookStartDelta="0.002"}
+cvars={cursorSizePreferred="-1", gxMaximize="1", gxMonitor="0", CursorFreelookStartDelta="0.002", autoLootDefault="1"}
 GetCVar=function(k) return cvars[k] end GetCVarBool=function(k) return cvars[k]=="1" end
 windowSizeCalls=0 C_VideoOptions={GetGameWindowSizes=function() windowSizeCalls=windowSizeCalls+1 return {{x=2560,y=1440}} end}
 GetPhysicalScreenSize=function() return 2560,1440 end
@@ -85,7 +85,7 @@ ShowMerchantSellCursor=function() end ShowInspectCursor=function() end SetCursor
 inRange=true tooFar=false blockedCalls=0
 CheckInteractDistance=function(u, index) if inCombat then blockedCalls=blockedCalls+1 end if index==4 then return not tooFar end return inRange end
 buttons={} IsMouseButtonDown=function(b) return buttons[b] or false end
-shift=false IsShiftKeyDown=function() return shift end
+shift=false IsShiftKeyDown=function() return shift end IsModifiedClick=function(a) return a=="AUTOLOOTTOGGLE" and shift end
 speed=0 unitSpeed=0 GetUnitSpeed=function(u) if u=="player" then return speed end return unitSpeed end
 inCombat=false InCombatLockdown=function() return inCombat end UnitAffectingCombat=function() return inCombat end
 -- classic skill list: all three gathering professions unless a test removes one

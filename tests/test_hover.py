@@ -149,6 +149,10 @@ SCENARIOS = [
 		("  leave", "leave() idle(30) tip=false", "glove glow"),
 		("reach a corpse with shift held", "shift=true reach({dead=true, loot=true}, {'Enforcer','Level 17'}, true) idle(10)", "outline:Pickup"),
 		("  release shift", "stillFrames(5) inFrame(\"shift=false ev('MODIFIER_STATE_CHANGED', 'LSHIFT', 0) ev('CURSOR_CHANGED', true, 0)\") stillFrames(10)", "outline:LootAll"),
+		("  leave", "leave() idle(30) tip=false", "glove glow"),
+		("auto loot off: a single bag", "cvars.autoLootDefault='0' reach({dead=true, loot=true}, {'Boar','Level 5'}, true) idle(10)", "outline:Pickup"),
+		("  press shift: the pair of bags", "stillFrames(5) inFrame(\"shift=true ev('MODIFIER_STATE_CHANGED', 'LSHIFT', 1) ev('CURSOR_CHANGED', true, 0)\") stillFrames(10)", "outline:LootAll"),
+		("  leave", "shift=false leave() idle(30) tip=false cvars.autoLootDefault='1'", "glove glow"),
 	]),
 	("services off", [
 		("vendor: glow hidden, no outline", "ns.db.outlineServices=false reach({}, {'Bob','General Goods'}, true) idle(10)", "nothing"),

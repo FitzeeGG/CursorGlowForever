@@ -637,8 +637,20 @@ local function getHoverCursor()
 		if UnitIsDead("mouseover") then
 			if CanLootUnit then
 				local ok, hasLoot = pcall(CanLootUnit, UnitGUID("mouseover"))
-				-- shift held (loot one item at a time) swaps the pair of bags for one
-				if ok and hasLoot then return IsShiftKeyDown() and "Pickup" or "LootAll" end
+				-- the pair of bags with auto loot, one bag without; the auto loot
+				-- key (shift by default) swaps them
+				if ok and hasLoot then
+					local autoLoot = GetCVarBool("autoLootDefault")
+					local toggle
+					if IsModifiedClick then
+						local okClick, held = pcall(IsModifiedClick, "AUTOLOOTTOGGLE")
+						toggle = okClick and held
+					else
+						toggle = IsShiftKeyDown()
+					end
+					if toggle then autoLoot = not autoLoot end
+					return autoLoot and "LootAll" or "Pickup"
+				end
 			end
 			return tooltipShown and findGathering(2, true) or nil
 		end
