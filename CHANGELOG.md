@@ -7,6 +7,7 @@
 - Hover outlines (pickaxe, herbs, sword, loot bag...) are now a thin line around the cursor like the glove's, instead of a thick solid band. The new "Fill hover outlines" setting brings the solid band back.
 - Enemy nameplates no longer get the sword outline when moving straight from one enemy onto another enemy's nameplate, or onto a nameplate while you or the enemy are moving (in combat too).
 - The drawn glove no longer shows up behind the mining, herb or other hover cursor after quick clicks (clicking a node or a mob), when the game never hid its cursor.
+- Holding a mouse button on an enemy no longer briefly shows the pickaxe (or another gathering) outline when its tooltip mentions Mining, Herbalism or Skinning, such as a quest objective.
 
 ## 1.0.4
 

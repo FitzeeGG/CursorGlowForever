@@ -781,6 +781,7 @@ local function reachTarget(signal)
 	end
 	state.targetTime = now
 	state.hoverCursor = nil -- a new target may show another cursor
+	state.onUnit = false
 	-- Interaction range: the game shows the "unable" version of the cursor out
 	-- of range. For units the starting state comes from CheckInteractDistance;
 	-- after that every cursor change on the same target is the game swapping
@@ -1119,8 +1120,14 @@ driver:SetScript("OnUpdate", function(_, elapsed)
 		local now = GetTime()
 		if not state.wasOnTarget then
 			state.hoverCursor = nil
+		elseif state.onUnit and not UnitExists("mouseover") then
+			-- Still on the unit, but the game has dropped it as the mouseover
+			-- (holding a mouse button on it) while its tooltip stays up: keep
+			-- its cursor. Read as an object, a line of its tooltip could pass
+			-- for a node's (a quest objective naming Mining).
 		elseif state.tooltipChanged or now - state.hoverCheckTime > .1 then
 			state.tooltipChanged, state.hoverCheckTime = false, now
+			state.onUnit = state.onUnit or UnitExists("mouseover")
 			local ok, hoverCursor = pcall(getHoverCursor)
 			hoverCursor = ok and hoverCursor or nil
 			if hoverCursor ~= state.hoverCursor or ns.debug and not hoverCursor and not state.reportedUnknown then
