@@ -56,6 +56,7 @@ local HOVER_SHEETS = {
 -- so a wider window is used, minus changes that belong to leaving the last one.
 local SAME_FRAME = .001
 local UI_HANDOVER = .1
+local STALE_TOOLTIP = .02 -- a tooltip filled in this long before reaching a target belongs to the one before
 local CHANGE_WINDOW = .25
 local LEAVE_GRACE = .05
 -- hover outline: rings of cursor silhouettes plus a soft circle, positions in
@@ -689,6 +690,7 @@ local state = {
 	hoverCursor = nil, -- cursor file of the current hover look, if known
 	hoverCheckTime = 0,
 	tooltipChanged = false,
+	tooltipTime = -1, -- when the tooltip was last filled in
 	uiCursor = nil, -- cursor set by the UI: {look = HOVER_SHEETS key or false, focus = frame}
 	lookByName = {}, -- per target name: whether it has its own cursor (this session)
 	lastX = 0,
@@ -1120,11 +1122,15 @@ driver:SetScript("OnUpdate", function(_, elapsed)
 		local now = GetTime()
 		if not state.wasOnTarget then
 			state.hoverCursor = nil
-		elseif state.onUnit and not UnitExists("mouseover") then
-			-- Still on the unit, but the game has dropped it as the mouseover
-			-- (holding a mouse button on it) while its tooltip stays up: keep
-			-- its cursor. Read as an object, a line of its tooltip could pass
-			-- for a node's (a quest objective naming Mining).
+		elseif not UnitExists("mouseover") and (state.onUnit or state.tooltipTime < state.targetTime - STALE_TOOLTIP) then
+			-- No unit, so the target would be read from the tooltip as an
+			-- object, but the tooltip isn't this target's: keep the cursor.
+			--  * Still on the unit, but the game has dropped it as the mouseover
+			--    (holding a mouse button on it). Its tooltip could pass for a
+			--    node's (a quest objective naming Mining).
+			--  * The tooltip hasn't changed since reaching the target: it still
+			--    shows what was under the mouse before (an ore node, while the
+			--    enemy now under the mouse isn't the mouseover yet).
 		elseif state.tooltipChanged or now - state.hoverCheckTime > .1 then
 			state.tooltipChanged, state.hoverCheckTime = false, now
 			state.onUnit = state.onUnit or UnitExists("mouseover")
@@ -1551,8 +1557,11 @@ end)
 GameTooltip:HookScript("OnHide", function()
 	state.staleTooltip = false
 end)
-GameTooltip:HookScript("OnTooltipCleared", function() state.tooltipChanged = true end)
-GameTooltip:HookScript("OnSizeChanged", function() state.tooltipChanged = true end)
+-- when the tooltip was last filled in: lines older than the target are stale
+local function tooltipChanged() state.tooltipChanged, state.tooltipTime = true, GetTime() end
+GameTooltip:HookScript("OnShow", tooltipChanged)
+GameTooltip:HookScript("OnTooltipCleared", tooltipChanged)
+GameTooltip:HookScript("OnSizeChanged", tooltipChanged)
 
 
 -- CURSORS SET BY THE UI
