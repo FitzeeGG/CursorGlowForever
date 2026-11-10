@@ -54,6 +54,12 @@ SCENARIOS = [
 		("  put it down", "carrying=nil idle(5)", "glove glow"),
 		("turning the camera: the drawn glove", "mlook=true idle(5)", "drawn glove + strong glow"),
 		("  stop turning", "mlook=false idle(5)", "glove glow"),
+		("quick click, mouselook lingering after it", "buttons.LeftButton=true mlook=true hooked.CameraOrSelectOrMoveStart() stillFrames(2) "
+			"buttons.LeftButton=false hooked.CameraOrSelectOrMoveStop() idle(3)", "glove glow"),
+		("  then turning the camera: the drawn glove", "mlook=false idle(2) mlook=true idle(5)", "drawn glove + strong glow"),
+		("  click while turning: still drawn", "buttons.LeftButton=true hooked.CameraOrSelectOrMoveStart() idle(3)", "drawn glove + strong glow"),
+		("  release, still turning", "buttons.LeftButton=false hooked.CameraOrSelectOrMoveStop() idle(3)", "drawn glove + strong glow"),
+		("  stop turning", "mlook=false idle(5)", "glove glow"),
 	]),
 	("nameplates", [
 		("on the harpy's nameplate (no cursor change)", "onPlate=true unit={enemy=true} ev('WORLD_CURSOR_TOOLTIP_UPDATE', 1) ev('UPDATE_MOUSEOVER_UNIT') tip=true lines={'Witchwing Harpy','Level 14'} idle(20)", "glove glow"),

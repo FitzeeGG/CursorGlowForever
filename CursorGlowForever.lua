@@ -873,7 +873,16 @@ local function isCursorHidden()
 		end
 	end
 	if next(state.pressed) then return state.isPressHidden() end
-	return state.looking or state.turning or IsMouselooking()
+	local looking = state.looking or state.turning or IsMouselooking()
+	-- After a click that never hid the cursor (clicking a node or a mob), the
+	-- mouselook state can linger past the release, and with quick clicks
+	-- PLAYER_STARTED_LOOKING can even arrive after it: the game cursor shows
+	-- all the while, so ignore the state until it has cleared.
+	if state.afterClick then
+		if looking then return false end
+		state.afterClick = nil
+	end
+	return looking
 end
 
 
@@ -1066,6 +1075,7 @@ driver:SetScript("OnUpdate", function(_, elapsed)
 	local hidden = isCursorHidden()
 	local show, mode = true, "base"
 	local uiLook = ns.getUICursor()
+	if hidden ~= state.wasHidden then debug(hidden and "cursor hidden" or "cursor shown") end
 	if hidden and not state.wasHidden then
 		state.hiddenTime, state.changedWhenHidden = GetTime(), state.cursorChanged
 	end
@@ -1655,8 +1665,13 @@ for button, functions in pairs({
 	if _G[start] and _G[stop] then
 		hooksecurefunc(start, function()
 			local x, y = GetCursorPosition()
-			state.pressed[button] = {x = x, y = y}
+			-- pressed while the cursor is already hidden (mouselook toggled on)
+			state.pressed[button] = {x = x, y = y, hidden = state.wasHidden or nil}
 		end)
-		hooksecurefunc(stop, function() state.pressed[button] = nil end)
+		hooksecurefunc(stop, function()
+			local press = state.pressed[button]
+			state.pressed[button] = nil
+			if press and not next(state.pressed) then state.afterClick = not state.wasHidden or nil end
+		end)
 	end
 end
