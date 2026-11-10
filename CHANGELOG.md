@@ -9,6 +9,7 @@
 - The drawn glove no longer shows up behind the mining, herb or other hover cursor after quick clicks (clicking a node or a mob), when the game never hid its cursor.
 - Holding a mouse button on an enemy no longer briefly shows the pickaxe (or another gathering) outline when its tooltip mentions Mining, Herbalism or Skinning, such as a quest objective.
 - Corpses only get the pickaxe, herb or skinning outline from the game's own "Requires Mining", "Requires Herbalism" or "Skinnable" line, so a looted Venture Co. goblin whose tooltip names Mining (a quest objective) no longer shows the pickaxe.
+- Clicking an enemy no longer sometimes swaps the sword outline back to the normal glow: the game setting its cursor again just after a click is no longer taken for a change of look.
 - Moving from an ore node or herb straight onto an enemy no longer keeps the pickaxe or herb outline around the sword: the node's tooltip still showing is no longer read as the enemy's.
 
 ## 1.0.4

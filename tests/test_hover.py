@@ -101,6 +101,11 @@ SCENARIOS = [
 		("in combat, walking, on the harpy's body", "inCombat=true speed=7 reach(" + HARPY_A + ", {'Harpy A','Level 14'}, true) idle(20)", "outline:Attack"),
 		("  up onto its nameplate (no range checks)", "inFrame(\"onPlate=true ev('CURSOR_CHANGED', true, 0)\") idle(20)", "glove glow"),
 		("  back down onto its body", "inFrame(\"onPlate=false ev('CURSOR_CHANGED', true, 0)\") idle(20)", "outline:Attack"),
+		("  leave", "inCombat=false speed=0 leave() idle(30) tip=false", "glove glow"),
+		("click an enemy: the game sets the sword again a little after it reappears",
+			"reach(" + HARPY_A + ", {'Harpy A','Level 14'}, true) idle(20) mlook=true stillFrames(3) ev('CURSOR_CHANGED', true, 0) "
+			"stillFrames(1) mlook=false stillFrames(10) ev('CURSOR_CHANGED', true, 0) stillFrames(20)", "outline:Attack"),
+		("  leave", "leave() idle(30) tip=false", "glove glow"),
 	]),
 	("quest givers", [
 		("repair vendor, no quests known", "reach(" + SMITH + ", {'Ghrawt','Bowyer'}, true) idle(10)", "outline:RepairNPC"),

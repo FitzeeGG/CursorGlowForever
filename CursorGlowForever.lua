@@ -56,6 +56,7 @@ local HOVER_SHEETS = {
 -- so a wider window is used, minus changes that belong to leaving the last one.
 local SAME_FRAME = .001
 local UI_HANDOVER = .1
+local REAPPEAR_WINDOW = .3 -- cursor changes this soon after the cursor reappears are the game restoring it
 local STALE_TOOLTIP = .02 -- a tooltip filled in this long before reaching a target belongs to the one before
 local CHANGE_WINDOW = .25
 local LEAVE_GRACE = .05
@@ -1085,6 +1086,8 @@ driver:SetScript("OnUpdate", function(_, elapsed)
 	if hidden ~= state.wasHidden then debug(hidden and "cursor hidden" or "cursor shown") end
 	if hidden and not state.wasHidden then
 		state.hiddenTime, state.changedWhenHidden = GetTime(), state.cursorChanged
+	elseif state.wasHidden and not hidden then
+		state.shownTime = GetTime()
 	end
 	if hidden then
 		mode = db.gloveWhileTurning and "turning" or "base"
@@ -1183,6 +1186,10 @@ driver:SetScript("OnUpdate", function(_, elapsed)
 			-- signals can be spread over a couple of frames)
 			and math.abs(change.time - state.targetTime) > UI_HANDOVER
 			and math.abs(change.time - state.leaveEventTime) >= SAME_FRAME
+			-- the game sets its cursor again after it reappears from a click
+			-- or turning the camera (the change can come a few frames late):
+			-- the look it comes back with is judged when it reappears
+			and change.time - (state.shownTime or -1) > REAPPEAR_WINDOW
 		if not sameTarget then
 			if now - change.time > UI_HANDOVER then state.pendingChange = nil end
 		elseif change.modifier and (state.hoverCursor == "LootAll" or state.hoverCursor == "Pickup") then
