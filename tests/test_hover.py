@@ -38,6 +38,8 @@ SCENARIOS = [
 		("  leave", "leave() idle(30) tip=false", "glove glow"),
 		("skinnable corpse", "reach({dead=true}, {'Boar','Skinnable'}, true) idle(10)", "outline:Skin"),
 		("  leave", "leave() idle(30) tip=false", "glove glow"),
+		("looted corpse naming Mining in its tooltip (a quest objective): no pickaxe", "reach({dead=true}, {'Venture Co. Foreman','Level 42','Mining Pick 0/5'}, true) idle(10)", "nothing"),
+		("  leave", "leave() idle(30) tip=false", "glove glow"),
 		("ore node", "reach(nil, {'Copper Vein','Requires Mining'}, true) idle(10)", "outline:Mine"),
 		("  straight onto an enemy, not the mouseover yet: not the pickaxe", "unit=nil ev('WORLD_CURSOR_TOOLTIP_UPDATE', 1) ev('CURSOR_CHANGED', true, 0) idle(10)", "glove glow"),
 		("  leave", "leave() idle(30) tip=false", "glove glow"),

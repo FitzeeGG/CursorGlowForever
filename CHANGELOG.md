@@ -8,6 +8,7 @@
 - Enemy nameplates no longer get the sword outline when moving straight from one enemy onto another enemy's nameplate, or onto a nameplate while you or the enemy are moving (in combat too).
 - The drawn glove no longer shows up behind the mining, herb or other hover cursor after quick clicks (clicking a node or a mob), when the game never hid its cursor.
 - Holding a mouse button on an enemy no longer briefly shows the pickaxe (or another gathering) outline when its tooltip mentions Mining, Herbalism or Skinning, such as a quest objective.
+- Corpses only get the pickaxe, herb or skinning outline from the game's own "Requires Mining", "Requires Herbalism" or "Skinnable" line, so a looted Venture Co. goblin whose tooltip names Mining (a quest objective) no longer shows the pickaxe.
 - Moving from an ore node or herb straight onto an enemy no longer keeps the pickaxe or herb outline around the sword: the node's tooltip still showing is no longer read as the enemy's.
 
 ## 1.0.4

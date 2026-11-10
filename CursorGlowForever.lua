@@ -453,20 +453,24 @@ local function getSpellName(spellID, fallback)
 end
 
 
--- tooltip texts naming a gathering cursor, on nodes and on corpses
-local function getGatherTexts()
-	if gatherTexts then return gatherTexts end
-	gatherTexts = {}
-	local function add(cursorFile, ...)
-		for i = 1, select("#", ...) do
-			local text = select(i, ...)
-			if type(text) == "string" and text ~= "" then table.insert(gatherTexts, {text, cursorFile}) end
+-- tooltip texts naming a gathering cursor: on corpses only the game's own
+-- "Requires Mining"-style line (a corpse's tooltip can name a profession in
+-- other lines, like a quest objective), on nodes the profession name too
+local gatherTextsCorpse
+local function getGatherTexts(corpse)
+	if not gatherTexts then
+		gatherTexts, gatherTextsCorpse = {}, {}
+		local function add(cursorFile, requirement, profession)
+			for _, text in ipairs({requirement or "", profession or ""}) do
+				if text ~= "" then table.insert(gatherTexts, {text, cursorFile}) end
+			end
+			if requirement and requirement ~= "" then table.insert(gatherTextsCorpse, {requirement, cursorFile}) end
 		end
+		add("Mine", UNIT_SKINNABLE_ROCK, getSpellName(2575, "Mining"))
+		add("GatherHerbs", UNIT_SKINNABLE_HERB, getSpellName(2366, "Herbalism"))
+		add("Skin", UNIT_SKINNABLE_LEATHER, getSpellName(8613, "Skinning"))
 	end
-	add("Mine", UNIT_SKINNABLE_ROCK, getSpellName(2575, "Mining"))
-	add("GatherHerbs", UNIT_SKINNABLE_HERB, getSpellName(2366, "Herbalism"))
-	add("Skin", UNIT_SKINNABLE_LEATHER, getSpellName(8613, "Skinning"))
-	return gatherTexts
+	return corpse and gatherTextsCorpse or gatherTexts
 end
 
 
@@ -606,8 +610,8 @@ end
 
 
 -- the skinning cursor only with the profession
-local function findGathering(first)
-	local look = findText(first, nil, getGatherTexts())
+local function findGathering(first, corpse)
+	local look = findText(first, nil, getGatherTexts(corpse))
 	if look and GATHERING[look] and not ns.hasGatheringProfession(look) then return nil end
 	return look
 end
@@ -635,7 +639,7 @@ local function getHoverCursor()
 				-- shift held (loot one item at a time) swaps the pair of bags for one
 				if ok and hasLoot then return IsShiftKeyDown() and "Pickup" or "LootAll" end
 			end
-			return tooltipShown and findGathering(2) or nil
+			return tooltipShown and findGathering(2, true) or nil
 		end
 		if UnitCanAttack("player", "mouseover") then return "Attack" end
 		if not UnitPlayerControlled("mouseover") and not isKnownQuestGiver("mouseover") then
