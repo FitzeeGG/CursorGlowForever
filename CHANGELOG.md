@@ -1,17 +1,20 @@
 # Cursor Glow Forever
 
-## 1.0.5
+## 1.0.6
 
-- New add-on icon.
-- Movement prediction now defaults to 0.4 frames (was 1), so the glow overshoots less when the mouse stops.
-- Hover outlines (pickaxe, herbs, sword, loot bag...) are now a thin line around the cursor like the glove's, instead of a thick solid band. The new "Fill hover outlines" setting brings the solid band back.
-- Enemy nameplates no longer get the sword outline when moving straight from one enemy onto another enemy's nameplate, or onto a nameplate while you or the enemy are moving (in combat too).
 - The drawn glove no longer shows up behind the mining, herb or other hover cursor after quick clicks (clicking a node or a mob), when the game never hid its cursor.
 - Holding a mouse button on an enemy no longer briefly shows the pickaxe (or another gathering) outline when its tooltip mentions Mining, Herbalism or Skinning, such as a quest objective.
 - Corpses only get the pickaxe, herb or skinning outline from the game's own "Requires Mining", "Requires Herbalism" or "Skinnable" line, so a looted Venture Co. goblin whose tooltip names Mining (a quest objective) no longer shows the pickaxe.
 - Clicking an enemy no longer sometimes swaps the sword outline back to the normal glow: the game setting its cursor again just after a click is no longer taken for a change of look.
 - Lootable corpses with auto loot turned off get the single bag outline, matching the game's cursor (it was always the pair of bags); the auto loot key still swaps them.
 - Moving from an ore node or herb straight onto an enemy no longer keeps the pickaxe or herb outline around the sword: the node's tooltip still showing is no longer read as the enemy's.
+
+## 1.0.5
+
+- New add-on icon.
+- Movement prediction now defaults to 0.4 frames (was 1), so the glow overshoots less when the mouse stops.
+- Hover outlines (pickaxe, herbs, sword, loot bag...) are now a thin line around the cursor like the glove's, instead of a thick solid band. The new "Fill hover outlines" setting brings the solid band back.
+- Enemy nameplates no longer get the sword outline when moving straight from one enemy onto another enemy's nameplate, or onto a nameplate while you or the enemy are moving (in combat too).
 
 ## 1.0.4
 
